@@ -1,0 +1,28 @@
+* {
+   padding: 0;
+   margin: 0;
+   box-sizing: border-box;
+}
+
+
+.card {
+   margin: 24px auto;
+   padding-right: 24px;
+   border: 1px solid brown;
+   border-radius: 16px;
+
+
+   display: flex;
+   align-items: center;
+   gap: 24px;
+
+
+   max-width: fit-content;
+}
+
+
+img {
+   max-height: 125px;
+   border-top-left-radius: 12px;
+   border-bottom-left-radius: 12px;
+}
