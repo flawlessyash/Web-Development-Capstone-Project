@@ -1,23 +1,6 @@
 // New Code
 
 
-const products = [
-   {
-       title: "Bag",
-       price: "$200",
-       rating: 4.2,
-       thumbnail: "https://images.jdmagicbox.com/quickquotes/images_main/sara-30-liters-polyester-black-school-bag-black-178207114-ksaft.jpg",
-   },
-   {
-       title: "Mat",
-       price: "$100",
-       rating: 3.9,
-       thumbnail: "https://rukminim2.flixcart.com/image/480/640/l58iaa80/mat/z/t/w/medium-natural-korai-grass-sleeping-mat-3-5-x-6-feet-river-grass-original-imagfyhgq4jvgmrg.jpeg?q=90",
-   },
-];
-
-
-
 
 function main(arr) {
    	for (let i = 0; i < arr.length; i++) {
@@ -39,7 +22,7 @@ function main(arr) {
 }
 
  async function getData() {
-    const URL = "https://dummyjson.com/products?select=title,price,rating,thumbnail";
+    const URL = "http://127.0.0.1:5003/products";
     const response = await fetch(URL);
     const data = await response.json();
     console.log(data);
