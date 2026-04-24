@@ -1,0 +1,486 @@
+/* Reset and Variables */
+:root {
+    --bg-color: #F8F9FA;
+    --card-bg: #FFFFFF;
+    --primary: #FFB37C;
+    --primary-hover: #ff9d5c;
+    --text-main: #2D3748;
+    --text-muted: #718096;
+    --border-color: #EDF2F7;
+    --shadow: 0 10px 30px rgba(0,0,0,0.05);
+    --radius: 20px;
+    --transition: all 0.3s ease;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Inter', sans-serif;
+}
+
+body {
+    background-color: var(--bg-color);
+    color: var(--text-main);
+    min-height: 100vh;
+    padding: 2rem;
+}
+
+/* Typography */
+h1, h2, h3 { font-weight: 600; }
+p { color: var(--text-muted); }
+
+/* Header */
+.app-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    max-width: 1400px;
+    margin: 0 auto 2rem;
+    padding: 0 1rem;
+}
+
+.logo h1 {
+    font-size: 1.8rem;
+    color: var(--text-main);
+    position: relative;
+}
+
+/* Primary Button */
+.primary-btn {
+    background-color: var(--primary);
+    color: #fff;
+    border: none;
+    border-radius: 12px;
+    padding: 0.8rem 1.2rem;
+    font-size: 0.95rem;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    transition: var(--transition);
+    box-shadow: 0 4px 15px rgba(255, 179, 124, 0.4);
+}
+
+.primary-btn:hover {
+    background-color: var(--primary-hover);
+    transform: translateY(-2px);
+}
+
+.primary-btn.full-width {
+    width: 100%;
+    justify-content: center;
+    margin-top: 1.5rem;
+}
+
+/* Bento Grid System */
+.bento-grid {
+    display: grid;
+    grid-template-columns: 1fr 2fr 1fr;
+    gap: 1.5rem;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.grid-col {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+/* Generic Bento Card */
+.bento-card {
+    background-color: var(--card-bg);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    box-shadow: var(--shadow);
+    transition: var(--transition);
+    border: 1px solid var(--border-color);
+}
+
+.bento-card:hover {
+    box-shadow: 0 15px 35px rgba(0,0,0,0.08);
+}
+
+.card-header h2 {
+    font-size: 1.2rem;
+    margin-bottom: 1rem;
+}
+
+/* ==== Column 1: Widgets ==== */
+.calendar-widget .calendar-days {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 1rem;
+}
+
+.day {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0.5rem;
+    border-radius: 10px;
+}
+
+.day.active {
+    background-color: var(--primary);
+    color: #fff;
+}
+
+.day.active .day-label, .day.active .day-num {
+    color: #fff;
+}
+
+.day-label {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-bottom: 0.3rem;
+}
+
+.day-num {
+    font-weight: 600;
+}
+
+.weather-widget {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    background: linear-gradient(135deg, #FFEFBA 0%, #FFFFFF 100%);
+}
+
+.weather-info h3 { font-size: 1.1rem; }
+.weather-info p { font-size: 0.85rem; }
+
+/* ==== Column 2: Core (Todos) ==== */
+.core-col {
+    grid-template-rows: 1fr auto;
+}
+
+.todos-widget {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.todos-header {
+    margin-bottom: 1.5rem;
+}
+
+.search-container {
+    position: relative;
+    margin-bottom: 1.5rem;
+}
+
+.search-icon {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-muted);
+}
+
+#habitSearch {
+    width: 100%;
+    padding: 0.8rem 1rem 0.8rem 2.8rem;
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+    background-color: var(--bg-color);
+    font-size: 0.95rem;
+    outline: none;
+    transition: var(--transition);
+}
+
+#habitSearch:focus {
+    border-color: var(--primary);
+    background-color: var(--card-bg);
+    box-shadow: 0 0 0 4px rgba(255, 179, 124, 0.1);
+}
+
+/* Habit List */
+.habit-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+    overflow-y: auto;
+    max-height: 50vh;
+}
+
+.habit-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    background-color: var(--bg-color);
+    border-radius: 12px;
+    border: 1px solid transparent;
+    transition: var(--transition);
+}
+
+.habit-item:hover {
+    border-color: var(--border-color);
+    background-color: var(--card-bg);
+}
+
+.habit-item.skeleton {
+    color: var(--text-muted);
+    font-style: italic;
+    justify-content: center;
+}
+
+.habit-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+}
+
+.habit-title {
+    font-weight: 500;
+    font-size: 1.05rem;
+}
+
+.habit-streak {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+
+.habit-streak.fire {
+    color: #E2725B;
+    font-weight: 600;
+}
+
+/* Custom Checkbox */
+.habit-check {
+    appearance: none;
+    width: 24px;
+    height: 24px;
+    border: 2px solid var(--border-color);
+    border-radius: 6px;
+    cursor: pointer;
+    position: relative;
+    transition: var(--transition);
+}
+
+.habit-check:checked {
+    background-color: var(--primary);
+    border-color: var(--primary);
+}
+
+.habit-check:checked::after {
+    content: '';
+    position: absolute;
+    left: 7px;
+    top: 3px;
+    width: 5px;
+    height: 10px;
+    border: solid white;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+}
+
+.habit-check:disabled {
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+.habit-item.completed {
+    opacity: 0.6;
+}
+
+.habit-item.completed .habit-title {
+    text-decoration: line-through;
+}
+
+.next-widget {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: var(--text-main);
+    color: white;
+}
+
+.next-info h3 { font-size: 0.9rem; color: #cbd5e1; font-weight: 400; margin-bottom: 0.2rem;}
+.next-info p { color: white; font-weight: 500;}
+.next-time { font-weight: 600; color: var(--primary); }
+
+/* ==== Column 3: Stats ==== */
+.stat-widget {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.highlight-card {
+    background-color: var(--primary);
+    color: white;
+}
+
+.highlight-card .stat-label, .highlight-card .stat-desc {
+    color: rgba(255,255,255,0.8);
+}
+
+.highlight-card .stat-value {
+    color: white;
+}
+
+.stat-label {
+    font-size: 0.85rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.stat-value {
+    font-size: 2.5rem;
+    margin: 0.5rem 0;
+}
+
+.stat-desc {
+    font-size: 0.85rem;
+}
+
+/* CSS Bar Chart */
+.chart-widget { flex-grow: 1;}
+.css-bar-chart {
+    display: flex;
+    justify-content: space-around;
+    align-items: flex-end;
+    height: 150px;
+    margin-top: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.bar-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.bar-bg {
+    width: 24px;
+    height: 120px;
+    background-color: var(--bg-color);
+    border-radius: 12px;
+    position: relative;
+    overflow: hidden;
+}
+
+.bar-fill {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    background-color: var(--primary);
+    border-radius: 12px;
+    transition: height 1s ease-out;
+}
+
+.bar-label {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+/* ==== Modal ==== */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.4);
+    backdrop-filter: blur(4px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    opacity: 0;
+    visibility: hidden;
+    transition: var(--transition);
+    z-index: 1000;
+}
+
+.modal-overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.modal-card {
+    background-color: var(--card-bg);
+    width: 100%;
+    max-width: 400px;
+    padding: 2rem;
+    border-radius: var(--radius);
+    box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
+    transform: translateY(20px);
+    transition: transform 0.3s ease;
+}
+
+.modal-overlay.active .modal-card {
+    transform: translateY(0);
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: var(--text-muted);
+}
+
+.input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.input-group label {
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.input-group input {
+    padding: 0.8rem;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    font-size: 1rem;
+    outline: none;
+}
+
+.input-group input:focus {
+    border-color: var(--primary);
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+    .bento-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+    .col-3 {
+        grid-column: span 2;
+        flex-direction: row;
+    }
+    .col-3 > .bento-card {
+        flex: 1;
+    }
+}
+
+@media (max-width: 768px) {
+    .bento-grid {
+        grid-template-columns: 1fr;
+    }
+    .col-3 {
+        grid-column: span 1;
+        flex-direction: column;
+    }
+}
