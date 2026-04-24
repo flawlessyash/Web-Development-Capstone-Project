@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Streakr — Habit Tracker</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header class="header">
+    <div class="container">
+      <div class="header__inner">
+        <div class="header__brand">
+          <span class="header__logo" aria-hidden="true">◆</span>
+          <h1 class="header__title">Streakr</h1>
+        </div>
+        <div class="header__meta">
+          <p class="header__date" id="today-date"></p>
+          <button class="btn btn--primary" id="open-modal-btn" aria-label="Add a new habit">
+            + New Habit
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- STATS BAR -->
+  <section class="stats" aria-label="Summary statistics">
+    <div class="container">
+      <div class="stats__grid">
+        <div class="stat-card">
+          <span class="stat-card__label">Total Habits</span>
+          <strong class="stat-card__value" id="stat-total">0</strong>
+        </div>
+        <div class="stat-card">
+          <span class="stat-card__label">Completed Today</span>
+          <strong class="stat-card__value" id="stat-done">0</strong>
+        </div>
+        <div class="stat-card">
+          <span class="stat-card__label">Best Streak</span>
+          <strong class="stat-card__value" id="stat-best">0</strong>
+        </div>
+        <div class="stat-card">
+          <span class="stat-card__label">Completion Rate</span>
+          <strong class="stat-card__value" id="stat-rate">0%</strong>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FILTER BAR -->
+  <section class="filter-bar" aria-label="Filter habits">
+    <div class="container">
+      <div class="filter-bar__inner">
+        <div class="filter-tabs" role="tablist" aria-label="Filter by category">
+          <button class="filter-tab filter-tab--active" role="tab" data-filter="all">All</button>
+          <button class="filter-tab" role="tab" data-filter="health">Health</button>
+          <button class="filter-tab" role="tab" data-filter="learning">Learning</button>
+          <button class="filter-tab" role="tab" data-filter="productivity">Productivity</button>
+          <button class="filter-tab" role="tab" data-filter="mindfulness">Mindfulness</button>
+        </div>
+        <div class="search-wrapper">
+          <label for="search-input" class="sr-only">Search habits</label>
+          <input
+            type="search"
+            id="search-input"
+            class="search-input"
+            placeholder="Search habits..."
+            aria-label="Search habits"
+          />
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- MAIN CONTENT -->
+  <main class="main" id="main-content">
+    <div class="container">
+
+      <!-- Habit Grid -->
+      <div class="habit-grid" id="habit-grid" role="list" aria-label="Habit list">
+        <!-- Habits are injected here by JS -->
+      </div>
+
+      <!-- Empty State -->
+      <div class="empty-state" id="empty-state" hidden>
+        <div class="empty-state__icon" aria-hidden="true">◇</div>
+        <h2 class="empty-state__heading">No habits yet</h2>
+        <p class="empty-state__text">Add your first habit and start building streaks.</p>
+        <button class="btn btn--primary" id="empty-add-btn">+ Add Habit</button>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- ADD / EDIT HABIT MODAL -->
+  <div class="modal-overlay" id="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-title" hidden>
+    <div class="modal">
+      <div class="modal__header">
+        <h2 class="modal__title" id="modal-title">Add Habit</h2>
+        <button class="modal__close" id="close-modal-btn" aria-label="Close modal">&times;</button>
+      </div>
+
+      <form class="modal__form" id="habit-form" novalidate>
+        <input type="hidden" id="habit-id" />
+
+        <div class="form-group">
+          <label class="form-label" for="habit-name">Habit Name <span aria-hidden="true">*</span></label>
+          <input
+            type="text"
+            id="habit-name"
+            class="form-input"
+            placeholder="e.g. Read for 30 minutes"
+            maxlength="60"
+            required
+            aria-required="true"
+          />
+          <span class="form-error" id="name-error" role="alert"></span>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="habit-category">Category</label>
+          <select id="habit-category" class="form-select">
+            <option value="health">Health</option>
+            <option value="learning">Learning</option>
+            <option value="productivity">Productivity</option>
+            <option value="mindfulness">Mindfulness</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="habit-desc">Description <span class="form-label--optional">(optional)</span></label>
+          <textarea
+            id="habit-desc"
+            class="form-textarea"
+            placeholder="Why does this habit matter to you?"
+            rows="3"
+            maxlength="200"
+          ></textarea>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="habit-goal">Daily Goal</label>
+          <select id="habit-goal" class="form-select">
+            <option value="once">Once a day</option>
+            <option value="twice">Twice a day</option>
+            <option value="custom">Custom</option>
+          </select>
+        </div>
+
+        <div class="modal__actions">
+          <button type="button" class="btn btn--ghost" id="cancel-modal-btn">Cancel</button>
+          <button type="submit" class="btn btn--primary" id="save-habit-btn">Save Habit</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- DELETE CONFIRM MODAL -->
+  <div class="modal-overlay" id="delete-overlay" role="dialog" aria-modal="true" aria-labelledby="delete-title" hidden>
+    <div class="modal modal--sm">
+      <div class="modal__header">
+        <h2 class="modal__title" id="delete-title">Delete Habit?</h2>
+      </div>
+      <p class="modal__body-text">This will permanently delete the habit and its streak history.</p>
+      <div class="modal__actions">
+        <button class="btn btn--ghost" id="cancel-delete-btn">Cancel</button>
+        <button class="btn btn--danger" id="confirm-delete-btn">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFICATION -->
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
