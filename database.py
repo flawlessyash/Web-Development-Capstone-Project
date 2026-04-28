@@ -1,54 +1,59 @@
 import sqlite3
 
 def init_db():
-    # Connect to the SQLite database (creates it if it doesn't exist)
+    """
+    Creates the SQLite database and all required tables.
+    Run this ONCE before starting the Flask app:  python database.py
+    """
     conn = sqlite3.connect('momentum.db')
     cursor = conn.cursor()
 
-    # Create the Habits table
-    # habit_id: Primary Key
-    # title: Name of the habit
-    # created_at: Timestamp of when the habit was created
-    # current_streak: Number of consecutive days the habit has been completed
+    # ── Habits table ─────────────────────────────────────────────────────────
+    # ✅ FIX: Added category, emoji, description, best_streak columns
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS Habits (
-            habit_id INTEGER PRIMARY KEY AUTOINCREMENT,
-            title TEXT NOT NULL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            current_streak INTEGER DEFAULT 0
+            habit_id      INTEGER PRIMARY KEY AUTOINCREMENT,
+            title         TEXT    NOT NULL,
+            category      TEXT    NOT NULL DEFAULT 'health',
+            emoji         TEXT    NOT NULL DEFAULT '⭐',
+            description   TEXT    DEFAULT '',
+            goal          TEXT    NOT NULL DEFAULT 'once',
+            current_streak INTEGER DEFAULT 0,
+            best_streak    INTEGER DEFAULT 0,
+            created_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     ''')
 
-    # Create the Habit_Logs table
-    # log_id: Primary Key
-    # habit_id: Foreign key linking to the Habits table
-    # completed_date: The date (YYYY-MM-DD) the habit was completed
+    # ── Habit_Logs table ─────────────────────────────────────────────────────
+    # One row per habit per day — UNIQUE constraint prevents duplicate logs
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS Habit_Logs (
-            log_id INTEGER PRIMARY KEY AUTOINCREMENT,
-            habit_id INTEGER,
-            completed_date DATE NOT NULL,
-            FOREIGN KEY (habit_id) REFERENCES Habits(habit_id),
-            UNIQUE(habit_id, completed_date) -- Prevents duplicate logs for the same habit on the same day
+            log_id         INTEGER PRIMARY KEY AUTOINCREMENT,
+            habit_id       INTEGER NOT NULL,
+            completed_date DATE    NOT NULL,
+            FOREIGN KEY (habit_id) REFERENCES Habits(habit_id) ON DELETE CASCADE,
+            UNIQUE(habit_id, completed_date)
         )
     ''')
 
-    # Insert some initial dummy data if the database is empty
+    # ── Seed data (only if empty) ────────────────────────────────────────────
     cursor.execute("SELECT COUNT(*) FROM Habits")
     if cursor.fetchone()[0] == 0:
         sample_habits = [
-            ("Drink 2L Water",),
-            ("Read 10 Pages",),
-            ("Code for 1 Hour",),
-            ("Morning Walk",)
+            ("Morning run",      "health",       "🏃", "Start the day with movement.", "once"),
+            ("Read 30 minutes",  "learning",     "📖", "Fiction, non-fiction — anything.", "once"),
+            ("Deep work block",  "productivity", "🎯", "No notifications. 90 min focus.",  "once"),
+            ("10-min meditation","mindfulness",  "🧘", "", "once"),
         ]
-        cursor.executemany("INSERT INTO Habits (title) VALUES (?)", sample_habits)
-        print("Inserted sample habits.")
+        cursor.executemany(
+            "INSERT INTO Habits (title, category, emoji, description, goal) VALUES (?, ?, ?, ?, ?)",
+            sample_habits
+        )
+        print("✅ Inserted sample habits.")
 
-    # Commit changes and close the connection
     conn.commit()
     conn.close()
-    print("Database initialized successfully.")
+    print("✅ Database initialized: momentum.db")
 
 if __name__ == '__main__':
     init_db()

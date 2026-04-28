@@ -1,11 +1,18 @@
 /**
- * STREAKR — Habit Tracker
- * app.js  |  Step 1: Frontend Feature Development (JS Logic)
+ * STREAKR v2 — Habit Tracker
+ * app.js
  *
- * Architecture:
- *  - State lives in localStorage (will be replaced by API calls in Step 3)
- *  - All DOM manipulation is centralized in render functions
- *  - Functions are small, named clearly — easy to defend in VIVA
+ * New features vs v1:
+ *  - Light / dark mode toggle (persisted in localStorage)
+ *  - Motivational greeting based on time of day
+ *  - Progress ring showing today's completion %
+ *  - Emoji picker in add/edit modal
+ *  - Suggestion chips in empty state (one-click add)
+ *  - Sort by: streak / name / newest / done-first
+ *  - Streak milestone badges (7, 21, 30, 100 days)
+ *  - Weekly bar chart per habit (replaces dots)
+ *  - Confetti burst when marking a habit done
+ *  - Weekly completion % stat
  */
 
 'use strict';
@@ -14,161 +21,236 @@
    1. CONSTANTS & STATE
    ============================================= */
 
-const STORAGE_KEY = 'streakr_habits';
+const STORAGE_KEY  = 'streakr_habits_v2';
+const THEME_KEY    = 'streakr_theme';
+const MODAL_IDS    = ['modal-overlay', 'delete-overlay'];
 
-/** @type {Habit[]} */
-let habits = loadHabits();
+const DAY_LABELS   = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
+const MILESTONES   = [
+  { days: 100, label: '💎 100' },
+  { days:  30, label: '👑 30'  },
+  { days:  21, label: '🏆 21'  },
+  { days:   7, label: '🎯 7'   },
+];
 
-let activeFilter = 'all';
-let searchQuery  = '';
-let habitToDelete = null;   // ID of habit pending deletion
+const GREETINGS = {
+  morning:   ['Good morning', 'Rise and shine', 'Morning!'],
+  afternoon: ['Good afternoon', 'Keep it up', 'Afternoon!'],
+  evening:   ['Good evening', 'Wind down right', 'Evening!'],
+  night:     ['Still going?', 'Night owl mode', 'Late night grind'],
+};
 
-/**
- * @typedef {Object} Habit
- * @property {string}  id         - Unique identifier (timestamp string)
- * @property {string}  name       - Habit name
- * @property {string}  category   - health | learning | productivity | mindfulness
- * @property {string}  desc       - Optional description
- * @property {string}  goal       - once | twice | custom
- * @property {number}  streak     - Current consecutive-day streak
- * @property {number}  bestStreak - Best streak ever
- * @property {string[]} history   - ISO date strings when habit was completed
- * @property {string}  createdAt  - ISO date string
- */
+let habits        = [];
+let activeFilter  = 'all';
+let searchQuery   = '';
+let sortMode      = 'newest';
+let habitToDelete = null;
 
 /* =============================================
-   2. PERSISTENCE (localStorage — replaced by API in Step 3)
+   2. API DATA LOADING
    ============================================= */
 
-function loadHabits() {
+async function loadHabits() {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : getSampleHabits();
-  } catch {
-    return getSampleHabits();
+    const res = await fetch('/api/habits');
+    if (!res.ok) throw new Error('Failed to fetch habits');
+    const data = await res.json();
+    return data.map(h => ({
+      id:         h.habit_id,
+      name:       h.title,
+      category:   h.category,
+      emoji:      h.emoji,
+      desc:       h.description,
+      goal:       h.goal,
+      streak:     h.current_streak,
+      bestStreak: h.best_streak,
+      history:    h.history || [],
+      createdAt:  h.created_at || todayISO()
+    }));
+  } catch (err) {
+    console.error(err);
+    showToast('❌ Error loading habits');
+    return [];
   }
 }
 
-function saveHabits() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(habits));
-}
-
-/** Starter habits so the app doesn't look empty on first load */
-function getSampleHabits() {
-  return [
-    createHabit('Morning run',        'health',       'Start the day moving — even 20 min counts.', 'once'),
-    createHabit('Read 30 minutes',    'learning',     'Fiction, non-fiction — anything counts.',    'once'),
-    createHabit('Deep work block',    'productivity', 'No notifications. Focus for 90 minutes.',    'once'),
-    createHabit('10-min meditation',  'mindfulness',  '',                                           'once'),
-  ];
-}
-
 /* =============================================
-   3. HABIT CRUD
+   3. HABIT CRUD (API)
    ============================================= */
 
-function createHabit(name, category, desc, goal) {
-  const today = todayISO();
-  return {
-    id:         Date.now().toString() + Math.random().toString(36).slice(2, 6),
-    name:       name.trim(),
-    category,
-    desc:       desc.trim(),
-    goal,
-    streak:     0,
-    bestStreak: 0,
-    history:    [],
-    createdAt:  today,
-  };
+async function addHabit(name, category, emoji, desc, goal) {
+  try {
+    const res = await fetch('/api/habits', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title: name, category, emoji, description: desc, goal })
+    });
+    if (!res.ok) throw new Error('Failed to add habit');
+    const h = await res.json();
+    
+    habits.unshift({
+      id:         h.habit_id,
+      name:       h.title,
+      category:   h.category,
+      emoji:      h.emoji,
+      desc:       h.description,
+      goal:       h.goal,
+      streak:     h.current_streak,
+      bestStreak: h.best_streak,
+      history:    h.history || [],
+      createdAt:  h.created_at || todayISO()
+    });
+    showToast('✅ Habit added!');
+    renderAll();
+  } catch (err) {
+    console.error(err);
+    showToast('❌ Error adding habit');
+  }
 }
 
-function addHabit(name, category, desc, goal) {
-  const habit = createHabit(name, category, desc, goal);
-  habits.unshift(habit);   // newest first
-  saveHabits();
-  return habit;
+async function updateHabit(id, patch) {
+  try {
+    const existing = habits.find(h => h.id === id);
+    const payload = {
+      title:       patch.name !== undefined ? patch.name : existing.name,
+      category:    patch.category !== undefined ? patch.category : existing.category,
+      emoji:       patch.emoji !== undefined ? patch.emoji : existing.emoji,
+      description: patch.desc !== undefined ? patch.desc : existing.desc,
+      goal:        patch.goal !== undefined ? patch.goal : existing.goal,
+    };
+    const res = await fetch(`/api/habits/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    if (!res.ok) throw new Error('Failed to update habit');
+    
+    updateHabitState(id, patch);
+    showToast('✏️ Habit updated!');
+    renderAll();
+  } catch (err) {
+    console.error(err);
+    showToast('❌ Error updating habit');
+  }
 }
 
-function updateHabit(id, updates) {
-  habits = habits.map(h => h.id === id ? { ...h, ...updates } : h);
-  saveHabits();
+async function deleteHabit(id) {
+  try {
+    const res = await fetch(`/api/habits/${id}`, { method: 'DELETE' });
+    if (!res.ok) throw new Error('Failed to delete habit');
+    habits = habits.filter(h => h.id !== id);
+    showToast('🗑️ Habit deleted.');
+    renderAll();
+  } catch (err) {
+    console.error(err);
+    showToast('❌ Error deleting habit');
+  }
 }
 
-function deleteHabit(id) {
-  habits = habits.filter(h => h.id !== id);
-  saveHabits();
+async function markDone(id) {
+  const h = habits.find(h => h.id === id);
+  if (!h || isDoneToday(h)) return;
+
+  try {
+    const res = await fetch(`/api/habits/${id}/log`, { method: 'POST' });
+    if (!res.ok) {
+      const data = await res.json();
+      throw new Error(data.error || 'Failed to log habit');
+    }
+    const data = await res.json();
+    
+    const today = todayISO();
+    const updatedHistory = [...h.history, today];
+    
+    updateHabitState(id, { 
+      history: updatedHistory, 
+      streak: data.current_streak, 
+      bestStreak: data.best_streak 
+    });
+    
+    fireConfetti();
+    showToast('🔥 Streak updated! Keep it up!');
+    renderAll();
+  } catch (err) {
+    console.error(err);
+    showToast('❌ Error logging habit');
+  }
 }
 
-/**
- * Mark a habit as done today and recalculate streak.
- * @param {string} id
- */
-function markDone(id) {
-  const habit = habits.find(h => h.id === id);
-  if (!habit || isDoneToday(habit)) return;
-
-  const today     = todayISO();
-  const yesterday = offsetDate(-1);
-
-  // Add today to history
-  const updatedHistory = [...habit.history, today];
-
-  // Recalculate streak
-  const lastEntry = habit.history.at(-1);
-  let newStreak   = lastEntry === yesterday ? habit.streak + 1 : 1;
-  let bestStreak  = Math.max(newStreak, habit.bestStreak);
-
-  updateHabit(id, {
-    history:    updatedHistory,
-    streak:     newStreak,
-    bestStreak: bestStreak,
-  });
+function updateHabitState(id, patch) {
+  habits = habits.map(h => h.id === id ? { ...h, ...patch } : h);
 }
 
 /* =============================================
    4. DATE HELPERS
    ============================================= */
 
-/** Returns today's date as YYYY-MM-DD */
-function todayISO() {
-  return new Date().toISOString().slice(0, 10);
-}
+function todayISO() { return new Date().toISOString().slice(0, 10); }
 
-/** Returns a date offset from today as YYYY-MM-DD */
 function offsetDate(days) {
   const d = new Date();
   d.setDate(d.getDate() + days);
   return d.toISOString().slice(0, 10);
 }
 
-/** Check if a habit was completed today */
-function isDoneToday(habit) {
-  return habit.history.includes(todayISO());
-}
-
-/**
- * Returns array of last N days as ISO strings (most recent last)
- * @param {number} n
- * @returns {string[]}
- */
 function lastNDays(n) {
   return Array.from({ length: n }, (_, i) => offsetDate(i - n + 1));
 }
 
-/* =============================================
-   5. FILTERING & SEARCH
-   ============================================= */
+function isDoneToday(h) { return h.history.includes(todayISO()); }
 
-function getFilteredHabits() {
-  return habits.filter(h => {
-    const matchesFilter = activeFilter === 'all' || h.category === activeFilter;
-    const matchesSearch = h.name.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesFilter && matchesSearch;
-  });
+/** Returns the 3-letter day name for an ISO date string */
+function dayLabel(iso) {
+  const d = new Date(iso + 'T12:00:00');
+  return DAY_LABELS[d.getDay()];
 }
 
 /* =============================================
-   6. RENDER FUNCTIONS
+   5. SORTING & FILTERING
+   ============================================= */
+
+function getSortedFilteredHabits() {
+  let list = habits.filter(h => {
+    const matchFilter = activeFilter === 'all' || h.category === activeFilter;
+    const matchSearch = h.name.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchFilter && matchSearch;
+  });
+
+  switch (sortMode) {
+    case 'streak':  list.sort((a, b) => b.streak - a.streak);           break;
+    case 'name':    list.sort((a, b) => a.name.localeCompare(b.name));   break;
+    case 'done':    list.sort((a, b) => isDoneToday(b) - isDoneToday(a));break;
+    case 'newest':
+    default:        /* already in insertion order (newest first) */       break;
+  }
+  return list;
+}
+
+/* =============================================
+   6. MILESTONE BADGE
+   ============================================= */
+
+function getMilestoneBadge(streak) {
+  for (const m of MILESTONES) {
+    if (streak >= m.days) return m.label;
+  }
+  return null;
+}
+
+/* =============================================
+   7. STATS
+   ============================================= */
+
+function calcWeeklyRate() {
+  if (!habits.length) return 0;
+  const days = lastNDays(7);
+  let done = 0, total = habits.length * 7;
+  habits.forEach(h => days.forEach(d => { if (h.history.includes(d)) done++; }));
+  return Math.round((done / total) * 100);
+}
+
+/* =============================================
+   8. RENDER
    ============================================= */
 
 function renderAll() {
@@ -177,108 +259,116 @@ function renderAll() {
 }
 
 function renderStats() {
-  const total    = habits.length;
-  const done     = habits.filter(isDoneToday).length;
-  const best     = Math.max(0, ...habits.map(h => h.bestStreak));
-  const rate     = total > 0 ? Math.round((done / total) * 100) : 0;
+  const total = habits.length;
+  const done  = habits.filter(isDoneToday).length;
+  const best  = total ? Math.max(...habits.map(h => h.bestStreak)) : 0;
+  const rate  = calcWeeklyRate();
 
   document.getElementById('stat-total').textContent = total;
   document.getElementById('stat-done').textContent  = done;
   document.getElementById('stat-best').textContent  = best;
-  document.getElementById('stat-rate').textContent  = rate + '%';
+  document.getElementById('stat-week').textContent  = rate + '%';
+
+  // Progress ring
+  const pct = total ? Math.round((done / total) * 100) : 0;
+  const circumference = 2 * Math.PI * 32; // 201.06
+  const offset = circumference - (pct / 100) * circumference;
+  const ringFill = document.getElementById('ring-fill');
+  if (ringFill) {
+    ringFill.style.strokeDasharray  = circumference;
+    ringFill.style.strokeDashoffset = offset;
+  }
+  document.getElementById('ring-percent').textContent = pct + '%';
 }
 
 function renderHabitGrid() {
-  const grid       = document.getElementById('habit-grid');
-  const emptyState = document.getElementById('empty-state');
-  const filtered   = getFilteredHabits();
+  const grid  = document.getElementById('habit-grid');
+  const empty = document.getElementById('empty-state');
+  const list  = getSortedFilteredHabits();
 
   grid.innerHTML = '';
 
-  if (filtered.length === 0) {
-    emptyState.hidden = false;
+  if (!list.length) {
+    empty.hidden = false;
     return;
   }
-
-  emptyState.hidden = true;
-  filtered.forEach(habit => {
-    const card = buildHabitCard(habit);
-    grid.appendChild(card);
-  });
+  empty.hidden = true;
+  list.forEach(h => grid.appendChild(buildCard(h)));
 }
 
-/**
- * Build a single habit card DOM element
- * @param {Habit} habit
- * @returns {HTMLElement}
- */
-function buildHabitCard(habit) {
-  const done  = isDoneToday(habit);
-  const days  = lastNDays(7);
+/* =============================================
+   9. HABIT CARD BUILDER
+   ============================================= */
+
+function buildCard(h) {
+  const done      = isDoneToday(h);
+  const days      = lastNDays(7);
+  const milestone = getMilestoneBadge(h.streak);
 
   const card = document.createElement('article');
-  card.className  = `habit-card${done ? ' habit-card--done' : ''}`;
-  card.dataset.id = habit.id;
-  card.dataset.category = habit.category;
+  card.className         = `habit-card${done ? ' habit-card--done' : ''}`;
+  card.dataset.id        = h.id;
+  card.dataset.category  = h.category;
   card.setAttribute('role', 'listitem');
+
+  // Build 7-day bar chart HTML
+  const bars = days.map((day, i) => {
+    const isToday    = i === days.length - 1;
+    const isDoneDay  = h.history.includes(day);
+    const height     = isDoneDay ? 28 : 8;
+    const cls        = [
+      'chart-bar',
+      isDoneDay  ? 'chart-bar--done'  : '',
+      isToday    ? 'chart-bar--today' : '',
+    ].filter(Boolean).join(' ');
+
+    return `
+      <div class="chart-bar-wrap">
+        <div class="${cls}" style="height:${height}px" title="${day}${isDoneDay ? ' ✓' : ''}"></div>
+        <span class="chart-day">${dayLabel(day)}</span>
+      </div>`;
+  }).join('');
 
   card.innerHTML = `
     <div class="habit-card__top">
-      <div class="habit-card__info">
-        <h3 class="habit-card__name" title="${escapeHtml(habit.name)}">${escapeHtml(habit.name)}</h3>
-        <div class="habit-card__meta">
-          <span class="category-badge category-badge--${habit.category}">${habit.category}</span>
+      <div class="habit-card__left">
+        <span class="habit-card__emoji" aria-hidden="true">${escapeHtml(h.emoji)}</span>
+        <div class="habit-card__info">
+          <h3 class="habit-card__name" title="${escapeHtml(h.name)}">${escapeHtml(h.name)}</h3>
+          <div class="habit-card__meta">
+            <span class="category-badge category-badge--${h.category}">${h.category}</span>
+            ${milestone ? `<span class="milestone-badge">${milestone}</span>` : ''}
+          </div>
         </div>
       </div>
       <div class="habit-card__actions">
-        <button
-          class="btn btn--icon"
-          data-action="edit"
-          data-id="${habit.id}"
-          aria-label="Edit ${escapeHtml(habit.name)}"
-          title="Edit">✎</button>
-        <button
-          class="btn btn--icon"
-          data-action="delete"
-          data-id="${habit.id}"
-          aria-label="Delete ${escapeHtml(habit.name)}"
-          title="Delete">✕</button>
+        <button class="btn btn--icon" data-action="edit"   data-id="${h.id}" aria-label="Edit ${escapeHtml(h.name)}"   title="Edit">✎</button>
+        <button class="btn btn--icon" data-action="delete" data-id="${h.id}" aria-label="Delete ${escapeHtml(h.name)}" title="Delete">✕</button>
       </div>
     </div>
 
-    ${habit.desc ? `<p class="habit-card__desc">${escapeHtml(habit.desc)}</p>` : ''}
+    ${h.desc ? `<p class="habit-card__desc">"${escapeHtml(h.desc)}"</p>` : ''}
 
     <div class="habit-card__streak">
       <div class="streak-info">
-        <span class="streak-count">${habit.streak}</span>
+        <span class="streak-count">${h.streak}</span>
         <span class="streak-label">day streak</span>
       </div>
-      <span class="streak-flame" aria-label="${done ? 'On fire' : 'Not done yet'}">${done ? '🔥' : '○'}</span>
+      <div class="streak-right">
+        <span class="streak-flame" aria-label="${done ? 'On fire!' : 'Not done yet'}">${done ? '🔥' : '○'}</span>
+        ${h.bestStreak > 0 ? `<span class="streak-best">best: ${h.bestStreak}</span>` : ''}
+      </div>
     </div>
 
-    <div class="habit-card__history" aria-label="Last 7 days">
-      <span class="history-label">7d</span>
-      ${days.map((day, i) => {
-        const isToday   = i === days.length - 1;
-        const completed = habit.history.includes(day);
-        return `<div
-          class="history-dot${completed ? ' history-dot--done' : ''}${isToday ? ' history-dot--today' : ''}"
-          title="${day}${completed ? ' ✓' : ''}"
-          aria-label="${day}${completed ? ' completed' : ''}"
-        ></div>`;
-      }).join('')}
-    </div>
+    <div class="habit-card__chart" aria-label="Last 7 days activity">${bars}</div>
 
     <div class="habit-card__footer">
       <button
         class="mark-done-btn${done ? ' done' : ''}"
-        data-action="mark-done"
-        data-id="${habit.id}"
+        data-action="mark-done" data-id="${h.id}"
         ${done ? 'disabled aria-disabled="true"' : ''}
         aria-label="${done ? 'Already done today' : 'Mark as done today'}"
-      >
-        ${done ? '✓ Done today' : 'Mark as done'}
-      </button>
+      >${done ? '✓ Done today' : '○ Mark as done'}</button>
     </div>
   `;
 
@@ -286,34 +376,46 @@ function buildHabitCard(habit) {
 }
 
 /* =============================================
-   7. MODAL LOGIC
+   10. MODAL HELPERS
    ============================================= */
 
-function openAddModal() {
-  document.getElementById('modal-title').textContent = 'Add Habit';
-  document.getElementById('habit-id').value    = '';
-  document.getElementById('habit-name').value  = '';
-  document.getElementById('habit-category').value = 'health';
-  document.getElementById('habit-desc').value  = '';
-  document.getElementById('habit-goal').value  = 'once';
+function showModal(id) {
+  MODAL_IDS.forEach(mid => { document.getElementById(mid).hidden = mid !== id; });
+  document.body.style.overflow = 'hidden';
+}
+
+function closeModal(id) {
+  document.getElementById(id).hidden = true;
+  const anyOpen = MODAL_IDS.some(mid => !document.getElementById(mid).hidden);
+  if (!anyOpen) document.body.style.overflow = '';
+}
+
+function openAddModal(prefill = {}) {
+  document.getElementById('modal-title').textContent  = 'Add Habit';
+  document.getElementById('habit-id').value           = '';
+  document.getElementById('habit-name').value         = prefill.name     || '';
+  document.getElementById('habit-category').value     = prefill.category || 'health';
+  document.getElementById('habit-desc').value         = '';
+  document.getElementById('habit-goal').value         = 'once';
+  setEmoji(prefill.emoji || '⭐');
   clearFormErrors();
   showModal('modal-overlay');
-  document.getElementById('habit-name').focus();
+  setTimeout(() => document.getElementById('habit-name').focus(), 50);
 }
 
 function openEditModal(id) {
-  const habit = habits.find(h => h.id === id);
-  if (!habit) return;
-
-  document.getElementById('modal-title').textContent     = 'Edit Habit';
-  document.getElementById('habit-id').value              = habit.id;
-  document.getElementById('habit-name').value            = habit.name;
-  document.getElementById('habit-category').value        = habit.category;
-  document.getElementById('habit-desc').value            = habit.desc;
-  document.getElementById('habit-goal').value            = habit.goal;
+  const h = habits.find(h => h.id === id);
+  if (!h) return;
+  document.getElementById('modal-title').textContent  = 'Edit Habit';
+  document.getElementById('habit-id').value           = h.id;
+  document.getElementById('habit-name').value         = h.name;
+  document.getElementById('habit-category').value     = h.category;
+  document.getElementById('habit-desc').value         = h.desc;
+  document.getElementById('habit-goal').value         = h.goal;
+  setEmoji(h.emoji);
   clearFormErrors();
   showModal('modal-overlay');
-  document.getElementById('habit-name').focus();
+  setTimeout(() => document.getElementById('habit-name').focus(), 50);
 }
 
 function openDeleteModal(id) {
@@ -321,31 +423,24 @@ function openDeleteModal(id) {
   showModal('delete-overlay');
 }
 
-const MODAL_IDS = ['modal-overlay', 'delete-overlay'];
+/* =============================================
+   11. EMOJI PICKER
+   ============================================= */
 
-function showModal(id) {
-  // Close every other modal first — never stack two overlays
-  MODAL_IDS.forEach(mid => {
-    document.getElementById(mid).hidden = (mid !== id);
+function setEmoji(emoji) {
+  document.getElementById('habit-emoji').value = emoji;
+  document.querySelectorAll('.emoji-btn').forEach(btn => {
+    btn.classList.toggle('emoji-btn--active', btn.dataset.emoji === emoji);
   });
-  document.body.style.overflow = 'hidden';
-}
-
-function closeModal(id) {
-  document.getElementById(id).hidden = true;
-  // Only restore scroll when ALL modals are closed
-  const anyOpen = MODAL_IDS.some(mid => !document.getElementById(mid).hidden);
-  if (!anyOpen) document.body.style.overflow = '';
 }
 
 /* =============================================
-   8. FORM VALIDATION
+   12. FORM VALIDATION
    ============================================= */
 
-function validateHabitForm() {
-  const name = document.getElementById('habit-name').value.trim();
+function validateForm() {
   clearFormErrors();
-
+  const name = document.getElementById('habit-name').value.trim();
   if (!name) {
     showFieldError('habit-name', 'name-error', 'Habit name is required.');
     return false;
@@ -357,58 +452,152 @@ function validateHabitForm() {
   return true;
 }
 
-function showFieldError(inputId, errorId, message) {
+function showFieldError(inputId, errorId, msg) {
   document.getElementById(inputId).classList.add('form-input--error');
-  document.getElementById(errorId).textContent = message;
+  document.getElementById(errorId).textContent = msg;
 }
-
 function clearFormErrors() {
-  document.querySelectorAll('.form-input--error')
-    .forEach(el => el.classList.remove('form-input--error'));
-  document.querySelectorAll('.form-error')
-    .forEach(el => el.textContent = '');
+  document.querySelectorAll('.form-input--error').forEach(el => el.classList.remove('form-input--error'));
+  document.querySelectorAll('.form-error').forEach(el => el.textContent = '');
 }
 
 /* =============================================
-   9. TOAST
+   13. CONFETTI
+   ============================================= */
+
+function fireConfetti() {
+  const canvas  = document.getElementById('confetti-canvas');
+  const ctx     = canvas.getContext('2d');
+  canvas.width  = window.innerWidth;
+  canvas.height = window.innerHeight;
+
+  const colors  = ['#e8920a', '#4caf78', '#5b9cf6', '#a78bfa', '#f0efe8'];
+  const pieces  = Array.from({ length: 80 }, () => ({
+    x:    Math.random() * canvas.width,
+    y:    Math.random() * -canvas.height,
+    size: Math.random() * 8 + 4,
+    color: colors[Math.floor(Math.random() * colors.length)],
+    speed: Math.random() * 3 + 2,
+    angle: Math.random() * 360,
+    spin:  (Math.random() - 0.5) * 6,
+    drift: (Math.random() - 0.5) * 2,
+  }));
+
+  let frame;
+  let elapsed = 0;
+
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    pieces.forEach(p => {
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.rotate((p.angle * Math.PI) / 180);
+      ctx.fillStyle = p.color;
+      ctx.globalAlpha = Math.max(0, 1 - elapsed / 120);
+      ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 0.5);
+      ctx.restore();
+
+      p.y     += p.speed;
+      p.x     += p.drift;
+      p.angle += p.spin;
+    });
+    elapsed++;
+    if (elapsed < 140) { frame = requestAnimationFrame(draw); }
+    else { ctx.clearRect(0, 0, canvas.width, canvas.height); }
+  }
+
+  cancelAnimationFrame(frame);
+  elapsed = 0;
+  draw();
+}
+
+/* =============================================
+   14. TOAST
    ============================================= */
 
 let toastTimer;
-
-function showToast(message) {
-  const toast = document.getElementById('toast');
-  toast.textContent = message;
-  toast.classList.add('toast--show');
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('toast--show');
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => toast.classList.remove('toast--show'), 2500);
+  toastTimer = setTimeout(() => t.classList.remove('toast--show'), 2600);
 }
 
 /* =============================================
-   10. UTILITIES
+   15. THEME
    ============================================= */
 
-/** Escape HTML to prevent XSS */
+function loadTheme() {
+  const saved = localStorage.getItem(THEME_KEY) || 'dark';
+  applyTheme(saved);
+}
+
+function applyTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+  localStorage.setItem(THEME_KEY, theme);
+  document.getElementById('theme-icon').textContent = theme === 'dark' ? '☀️' : '🌙';
+}
+
+function toggleTheme() {
+  const current = document.documentElement.getAttribute('data-theme');
+  applyTheme(current === 'dark' ? 'light' : 'dark');
+}
+
+/* =============================================
+   16. GREETING
+   ============================================= */
+
+function renderGreeting() {
+  const h = new Date().getHours();
+  let pool;
+  if      (h >= 5  && h < 12) pool = GREETINGS.morning;
+  else if (h >= 12 && h < 17) pool = GREETINGS.afternoon;
+  else if (h >= 17 && h < 21) pool = GREETINGS.evening;
+  else                         pool = GREETINGS.night;
+
+  const text = pool[Math.floor(Math.random() * pool.length)];
+  const el   = document.getElementById('greeting');
+  if (el) el.textContent = text + ' 👋';
+}
+
+/* =============================================
+   17. UTILITY
+   ============================================= */
+
 function escapeHtml(str) {
-  return str.replace(/[&<>"']/g, ch => ({
-    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  return String(str).replace(/[&<>"']/g, ch => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
   }[ch]));
 }
 
 /* =============================================
-   11. EVENT LISTENERS
+   18. EVENT LISTENERS
    ============================================= */
 
-function initEventListeners() {
-  // Open modal buttons
-  document.getElementById('open-modal-btn').addEventListener('click', openAddModal);
-  document.getElementById('empty-add-btn').addEventListener('click', openAddModal);
+function initEvents() {
+  // Theme toggle
+  document.getElementById('theme-toggle').addEventListener('click', toggleTheme);
 
-  // Close modal buttons
+  // Open modal
+  document.getElementById('open-modal-btn').addEventListener('click', () => openAddModal());
+  document.getElementById('empty-add-btn').addEventListener('click',  () => openAddModal());
+
+  // Suggestion chips (empty state)
+  document.querySelectorAll('.suggestion-chip').forEach(chip => {
+    chip.addEventListener('click', () => openAddModal({
+      name:     chip.dataset.name,
+      category: chip.dataset.category,
+      emoji:    chip.dataset.emoji,
+    }));
+  });
+
+  // Close modals
   document.getElementById('close-modal-btn').addEventListener('click',  () => closeModal('modal-overlay'));
   document.getElementById('cancel-modal-btn').addEventListener('click', () => closeModal('modal-overlay'));
   document.getElementById('cancel-delete-btn').addEventListener('click',() => closeModal('delete-overlay'));
 
-  // Close on overlay click
+  // Close on backdrop click
   document.getElementById('modal-overlay').addEventListener('click', e => {
     if (e.target === e.currentTarget) closeModal('modal-overlay');
   });
@@ -416,59 +605,54 @@ function initEventListeners() {
     if (e.target === e.currentTarget) closeModal('delete-overlay');
   });
 
-  // Keyboard: close on Escape
+  // Escape key
   document.addEventListener('keydown', e => {
-    if (e.key === 'Escape') {
-      closeModal('modal-overlay');
-      closeModal('delete-overlay');
-    }
+    if (e.key === 'Escape') { closeModal('modal-overlay'); closeModal('delete-overlay'); }
+  });
+
+  // Emoji picker
+  document.getElementById('emoji-picker').addEventListener('click', e => {
+    const btn = e.target.closest('.emoji-btn');
+    if (btn) setEmoji(btn.dataset.emoji);
   });
 
   // Form submit
-  document.getElementById('habit-form').addEventListener('submit', e => {
+  document.getElementById('habit-form').addEventListener('submit', async e => {
     e.preventDefault();
-    if (!validateHabitForm()) return;
+    if (!validateForm()) return;
 
     const id       = document.getElementById('habit-id').value;
     const name     = document.getElementById('habit-name').value.trim();
     const category = document.getElementById('habit-category').value;
+    const emoji    = document.getElementById('habit-emoji').value;
     const desc     = document.getElementById('habit-desc').value.trim();
     const goal     = document.getElementById('habit-goal').value;
 
     if (id) {
-      updateHabit(id, { name, category, desc, goal });
-      showToast('Habit updated!');
+      await updateHabit(parseInt(id, 10), { name, category, emoji, desc, goal });
     } else {
-      addHabit(name, category, desc, goal);
-      showToast('Habit added!');
+      await addHabit(name, category, emoji, desc, goal);
     }
-
     closeModal('modal-overlay');
-    renderAll();
   });
 
   // Confirm delete
-  document.getElementById('confirm-delete-btn').addEventListener('click', () => {
+  document.getElementById('confirm-delete-btn').addEventListener('click', async () => {
     if (!habitToDelete) return;
-    deleteHabit(habitToDelete);
+    await deleteHabit(habitToDelete);
     habitToDelete = null;
     closeModal('delete-overlay');
-    showToast('Habit deleted.');
-    renderAll();
   });
 
-  // Delegated click on habit grid (edit, delete, mark-done)
+  // Delegated: mark done / edit / delete buttons on cards
   document.getElementById('habit-grid').addEventListener('click', e => {
-    const actionBtn = e.target.closest('[data-action]');
-    if (!actionBtn) return;
-
-    const action = actionBtn.dataset.action;
-    const id     = actionBtn.dataset.id;
+    const btn = e.target.closest('[data-action]');
+    if (!btn) return;
+    const action = btn.dataset.action;
+    const id = parseInt(btn.dataset.id, 10);
 
     if (action === 'mark-done') {
       markDone(id);
-      showToast('🔥 Streak updated!');
-      renderAll();
     } else if (action === 'edit') {
       openEditModal(id);
     } else if (action === 'delete') {
@@ -479,15 +663,17 @@ function initEventListeners() {
   // Filter tabs
   document.querySelectorAll('.filter-tab').forEach(tab => {
     tab.addEventListener('click', () => {
-      document.querySelectorAll('.filter-tab').forEach(t => {
-        t.classList.remove('filter-tab--active');
-        t.setAttribute('aria-selected', 'false');
-      });
+      document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('filter-tab--active'));
       tab.classList.add('filter-tab--active');
-      tab.setAttribute('aria-selected', 'true');
       activeFilter = tab.dataset.filter;
       renderHabitGrid();
     });
+  });
+
+  // Sort
+  document.getElementById('sort-select').addEventListener('change', e => {
+    sortMode = e.target.value;
+    renderHabitGrid();
   });
 
   // Search
@@ -498,27 +684,14 @@ function initEventListeners() {
 }
 
 /* =============================================
-   12. DATE DISPLAY
+   19. INIT
    ============================================= */
 
-function renderDate() {
-  const el = document.getElementById('today-date');
-  if (!el) return;
-  el.textContent = new Date().toLocaleDateString('en-IN', {
-    weekday: 'long',
-    day:     'numeric',
-    month:   'long',
-    year:    'numeric',
-  });
-}
-
-/* =============================================
-   13. INIT
-   ============================================= */
-
-function init() {
-  renderDate();
-  initEventListeners();
+async function init() {
+  loadTheme();
+  renderGreeting();
+  initEvents();
+  habits = await loadHabits();
   renderAll();
 }
 

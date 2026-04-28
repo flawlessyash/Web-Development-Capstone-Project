@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Streakr — Habit Tracker</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet" />
+  <!-- ✅ FIX: Only ONE link to style.css using Flask's url_for -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+</head>
+
+<body>
+
+  <!-- CONFETTI CANVAS -->
+  <canvas id="confetti-canvas" aria-hidden="true"></canvas>
+
+  <!-- HEADER -->
+  <header class="header">
+    <div class="container">
+      <div class="header__inner">
+        <div class="header__brand">
+          <span class="header__logo" aria-hidden="true">◆</span>
+          <h1 class="header__title">Streakr</h1>
+        </div>
+        <div class="header__meta">
+          <p class="header__greeting" id="greeting"></p>
+          <button class="btn btn--icon theme-toggle" id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle theme">
+            <span class="theme-toggle__icon" id="theme-icon">☀️</span>
+          </button>
+          <button class="btn btn--primary" id="open-modal-btn" aria-label="Add a new habit">
+            + New Habit
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- STATS BAR -->
+  <section class="stats" aria-label="Summary statistics">
+    <div class="container">
+      <div class="stats__inner">
+
+        <!-- Progress Ring -->
+        <div class="progress-ring-wrap" aria-label="Today's completion progress">
+          <svg class="progress-ring" viewBox="0 0 80 80" aria-hidden="true">
+            <circle class="progress-ring__bg"   cx="40" cy="40" r="32" />
+            <circle class="progress-ring__fill" cx="40" cy="40" r="32" id="ring-fill" />
+          </svg>
+          <div class="progress-ring__label">
+            <strong id="ring-percent">0%</strong>
+            <span>today</span>
+          </div>
+        </div>
+
+        <!-- Stat Cards -->
+        <div class="stats__grid">
+          <div class="stat-card">
+            <span class="stat-card__icon" aria-hidden="true">📋</span>
+            <div>
+              <span class="stat-card__label">Total Habits</span>
+              <strong class="stat-card__value" id="stat-total">0</strong>
+            </div>
+          </div>
+          <div class="stat-card">
+            <span class="stat-card__icon" aria-hidden="true">✅</span>
+            <div>
+              <span class="stat-card__label">Done Today</span>
+              <strong class="stat-card__value" id="stat-done">0</strong>
+            </div>
+          </div>
+          <div class="stat-card">
+            <span class="stat-card__icon" aria-hidden="true">🔥</span>
+            <div>
+              <span class="stat-card__label">Best Streak</span>
+              <strong class="stat-card__value" id="stat-best">0</strong>
+            </div>
+          </div>
+          <div class="stat-card">
+            <span class="stat-card__icon" aria-hidden="true">📅</span>
+            <div>
+              <span class="stat-card__label">This Week</span>
+              <strong class="stat-card__value" id="stat-week">0%</strong>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- FILTER + SORT BAR -->
+  <section class="filter-bar" aria-label="Filter and sort habits">
+    <div class="container">
+      <div class="filter-bar__inner">
+
+        <div class="filter-tabs" role="tablist" aria-label="Filter by category">
+          <button class="filter-tab filter-tab--active" role="tab" data-filter="all">All</button>
+          <button class="filter-tab" role="tab" data-filter="health">💪 Health</button>
+          <button class="filter-tab" role="tab" data-filter="learning">📚 Learning</button>
+          <button class="filter-tab" role="tab" data-filter="productivity">⚡ Productivity</button>
+          <button class="filter-tab" role="tab" data-filter="mindfulness">🧘 Mindfulness</button>
+        </div>
+
+        <div class="filter-bar__controls">
+          <label for="sort-select" class="sr-only">Sort habits by</label>
+          <select id="sort-select" class="sort-select" aria-label="Sort habits">
+            <option value="newest">↓ Newest</option>
+            <option value="streak">🔥 Streak</option>
+            <option value="name">A → Z</option>
+            <option value="done">Done first</option>
+          </select>
+
+          <label for="search-input" class="sr-only">Search habits</label>
+          <input type="search" id="search-input" class="search-input" placeholder="Search habits..." aria-label="Search habits" />
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- MAIN -->
+  <main class="main" id="main-content">
+    <div class="container">
+
+      <div class="habit-grid" id="habit-grid" role="list" aria-label="Habit list"></div>
+
+      <!-- Empty State -->
+      <div class="empty-state" id="empty-state" hidden>
+        <div class="empty-state__icon" aria-hidden="true">◇</div>
+        <h2 class="empty-state__heading">No habits yet</h2>
+        <p class="empty-state__text">Pick an idea to get started, or create your own.</p>
+        <div class="empty-state__suggestions">
+          <button class="suggestion-chip" data-name="Morning run"      data-category="health"       data-emoji="🏃">🏃 Morning run</button>
+          <button class="suggestion-chip" data-name="Read 30 minutes"  data-category="learning"     data-emoji="📖">📖 Read 30 min</button>
+          <button class="suggestion-chip" data-name="Drink 2L water"   data-category="health"       data-emoji="💧">💧 Drink water</button>
+          <button class="suggestion-chip" data-name="Meditate"         data-category="mindfulness"  data-emoji="🧘">🧘 Meditate</button>
+          <button class="suggestion-chip" data-name="No social media"  data-category="productivity" data-emoji="📵">📵 No social media</button>
+          <button class="suggestion-chip" data-name="Journal"          data-category="mindfulness"  data-emoji="📓">📓 Journal</button>
+        </div>
+        <button class="btn btn--primary" id="empty-add-btn">+ Create custom habit</button>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- ADD / EDIT HABIT MODAL -->
+  <div class="modal-overlay" id="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-title" hidden>
+    <div class="modal">
+      <div class="modal__header">
+        <h2 class="modal__title" id="modal-title">Add Habit</h2>
+        <button class="modal__close" id="close-modal-btn" aria-label="Close modal">&times;</button>
+      </div>
+
+      <form class="modal__form" id="habit-form" novalidate>
+        <input type="hidden" id="habit-id" />
+
+        <!-- Emoji picker -->
+        <div class="form-group">
+          <label class="form-label">Choose an Emoji</label>
+          <div class="emoji-picker" id="emoji-picker" role="group" aria-label="Choose habit emoji">
+            <button type="button" class="emoji-btn emoji-btn--active" data-emoji="⭐">⭐</button>
+            <button type="button" class="emoji-btn" data-emoji="🏃">🏃</button>
+            <button type="button" class="emoji-btn" data-emoji="📖">📖</button>
+            <button type="button" class="emoji-btn" data-emoji="💧">💧</button>
+            <button type="button" class="emoji-btn" data-emoji="🧘">🧘</button>
+            <button type="button" class="emoji-btn" data-emoji="💪">💪</button>
+            <button type="button" class="emoji-btn" data-emoji="🎯">🎯</button>
+            <button type="button" class="emoji-btn" data-emoji="🍎">🍎</button>
+            <button type="button" class="emoji-btn" data-emoji="✍️">✍️</button>
+            <button type="button" class="emoji-btn" data-emoji="😴">😴</button>
+            <button type="button" class="emoji-btn" data-emoji="🚴">🚴</button>
+            <button type="button" class="emoji-btn" data-emoji="📓">📓</button>
+            <button type="button" class="emoji-btn" data-emoji="💊">💊</button>
+            <button type="button" class="emoji-btn" data-emoji="📵">📵</button>
+            <button type="button" class="emoji-btn" data-emoji="🎵">🎵</button>
+          </div>
+          <input type="hidden" id="habit-emoji" value="⭐" />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="habit-name">Habit Name <span aria-hidden="true">*</span></label>
+          <input type="text" id="habit-name" class="form-input" placeholder="e.g. Read for 30 minutes"
+            maxlength="60" required aria-required="true" />
+          <span class="form-error" id="name-error" role="alert"></span>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="habit-category">Category</label>
+            <select id="habit-category" class="form-select">
+              <option value="health">💪 Health</option>
+              <option value="learning">📚 Learning</option>
+              <option value="productivity">⚡ Productivity</option>
+              <option value="mindfulness">🧘 Mindfulness</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="habit-goal">Daily Goal</label>
+            <select id="habit-goal" class="form-select">
+              <option value="once">Once a day</option>
+              <option value="twice">Twice a day</option>
+              <option value="custom">Custom</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="habit-desc">Why this habit?
+            <span class="form-label--optional">(optional)</span>
+          </label>
+          <textarea id="habit-desc" class="form-textarea"
+            placeholder="Your motivation — helps you stay consistent!" rows="2" maxlength="200"></textarea>
+        </div>
+
+        <div class="modal__actions">
+          <button type="button" class="btn btn--ghost" id="cancel-modal-btn">Cancel</button>
+          <button type="submit" class="btn btn--primary" id="save-habit-btn">Save Habit</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- DELETE CONFIRM MODAL -->
+  <div class="modal-overlay" id="delete-overlay" role="dialog" aria-modal="true" aria-labelledby="delete-title" hidden>
+    <div class="modal modal--sm">
+      <div class="modal__header">
+        <h2 class="modal__title" id="delete-title">Delete Habit?</h2>
+      </div>
+      <p class="modal__body-text">This will permanently delete the habit and its entire streak history. This cannot be undone.</p>
+      <div class="modal__actions">
+        <button class="btn btn--ghost" id="cancel-delete-btn">Cancel</button>
+        <button class="btn btn--danger" id="confirm-delete-btn">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST -->
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <!-- ✅ FIX: Only ONE script tag at the bottom, using url_for -->
+  <script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+
+</html>

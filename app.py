@@ -1,106 +1,260 @@
 from flask import Flask, render_template, request, jsonify
 import sqlite3
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 
 app = Flask(__name__)
 
-# Utility function to get a database connection
+# ─────────────────────────────────────────────────────────────────────────────
+# DB HELPER
+# ─────────────────────────────────────────────────────────────────────────────
+
 def get_db_connection():
     conn = sqlite3.connect('momentum.db')
-    conn.row_factory = sqlite3.Row  # Enables accessing columns by name
+    conn.row_factory = sqlite3.Row          # access columns by name
+    conn.execute("PRAGMA foreign_keys = ON") # enforce FK ON DELETE CASCADE
     return conn
 
-# Route to render the frontend
+# ─────────────────────────────────────────────────────────────────────────────
+# FRONTEND ROUTE
+# ─────────────────────────────────────────────────────────────────────────────
+
 @app.route('/')
 def index():
     return render_template('index.html')
 
-# API Route to fetch all habits
+# ─────────────────────────────────────────────────────────────────────────────
+# GET  /api/habits  — fetch all habits with today's log status + 7-day history
+# ─────────────────────────────────────────────────────────────────────────────
+
 @app.route('/api/habits', methods=['GET'])
 def get_habits():
-    conn = get_db_connection()
+    conn  = get_db_connection()
     today = date.today().isoformat()
-    
-    # Query all habits, and use a LEFT JOIN with Habit_Logs to determine
-    # if the habit has already been logged specifically for TODAY.
+
+    # Fetch all habits with a flag for whether they are logged today
     query = '''
-        SELECT 
-            h.habit_id, 
-            h.title, 
+        SELECT
+            h.habit_id,
+            h.title,
+            h.category,
+            h.emoji,
+            h.description,
+            h.goal,
             h.current_streak,
-            CASE WHEN hl.log_id IS NOT NULL THEN 1 ELSE 0 END as logged_today
+            h.best_streak,
+            h.created_at,
+            CASE WHEN hl.log_id IS NOT NULL THEN 1 ELSE 0 END AS logged_today
         FROM Habits h
-        LEFT JOIN Habit_Logs hl ON h.habit_id = hl.habit_id AND hl.completed_date = ?
+        LEFT JOIN Habit_Logs hl
+            ON h.habit_id = hl.habit_id AND hl.completed_date = ?
         ORDER BY h.created_at DESC
     '''
-    
     habits = conn.execute(query, (today,)).fetchall()
+
+    habits_list = []
+    for row in habits:
+        h = dict(row)
+
+        # Build last-7-days history array: ["2026-04-19", "2026-04-21", ...]
+        seven_days_ago = (date.today() - timedelta(days=6)).isoformat()
+        logs = conn.execute(
+            '''SELECT completed_date FROM Habit_Logs
+               WHERE habit_id = ? AND completed_date >= ?
+               ORDER BY completed_date ASC''',
+            (h['habit_id'], seven_days_ago)
+        ).fetchall()
+        h['history'] = [r['completed_date'] for r in logs]
+
+        habits_list.append(h)
+
     conn.close()
-    
-    habits_list = [dict(row) for row in habits]
     return jsonify(habits_list)
 
-# API Route to create a new habit
+# ─────────────────────────────────────────────────────────────────────────────
+# POST /api/habits  — create a new habit
+# ─────────────────────────────────────────────────────────────────────────────
+
 @app.route('/api/habits', methods=['POST'])
 def add_habit():
     data = request.get_json()
-    title = data.get('title')
-    
-    if not title or title.strip() == '':
+
+    # ✅ Validation
+    title = (data.get('title') or '').strip()
+    if not title:
         return jsonify({"error": "Title is required"}), 400
-        
-    conn = get_db_connection()
+    if len(title) < 2:
+        return jsonify({"error": "Title must be at least 2 characters"}), 400
+
+    category    = data.get('category',    'health')
+    emoji       = data.get('emoji',       '⭐')
+    description = (data.get('description') or '').strip()
+    goal        = data.get('goal',        'once')
+
+    # Whitelist category values
+    valid_categories = ['health', 'learning', 'productivity', 'mindfulness']
+    if category not in valid_categories:
+        return jsonify({"error": "Invalid category"}), 400
+
+    conn   = get_db_connection()
     cursor = conn.cursor()
-    
-    # Insert new habit with initial defaults
-    cursor.execute('INSERT INTO Habits (title) VALUES (?)', (title.strip(),))
+    cursor.execute(
+        '''INSERT INTO Habits (title, category, emoji, description, goal)
+           VALUES (?, ?, ?, ?, ?)''',
+        (title, category, emoji, description, goal)
+    )
     habit_id = cursor.lastrowid
-    
     conn.commit()
     conn.close()
-    
+
     return jsonify({
-        "habit_id": habit_id, 
-        "title": title.strip(), 
-        "current_streak": 0, 
-        "logged_today": 0
+        "habit_id":       habit_id,
+        "title":          title,
+        "category":       category,
+        "emoji":          emoji,
+        "description":    description,
+        "goal":           goal,
+        "current_streak": 0,
+        "best_streak":    0,
+        "logged_today":   0,
+        "history":        []
     }), 201
 
-# API Route to log a habit for today
+# ─────────────────────────────────────────────────────────────────────────────
+# PUT  /api/habits/<id>  — update an existing habit  ✅ NEW ROUTE
+# ─────────────────────────────────────────────────────────────────────────────
+
+@app.route('/api/habits/<int:habit_id>', methods=['PUT'])
+def update_habit(habit_id):
+    data = request.get_json()
+
+    # ✅ Validation
+    title = (data.get('title') or '').strip()
+    if not title:
+        return jsonify({"error": "Title is required"}), 400
+    if len(title) < 2:
+        return jsonify({"error": "Title must be at least 2 characters"}), 400
+
+    category    = data.get('category',    'health')
+    emoji       = data.get('emoji',       '⭐')
+    description = (data.get('description') or '').strip()
+    goal        = data.get('goal',        'once')
+
+    valid_categories = ['health', 'learning', 'productivity', 'mindfulness']
+    if category not in valid_categories:
+        return jsonify({"error": "Invalid category"}), 400
+
+    conn = get_db_connection()
+
+    # Check habit exists
+    existing = conn.execute(
+        'SELECT habit_id FROM Habits WHERE habit_id = ?', (habit_id,)
+    ).fetchone()
+    if not existing:
+        conn.close()
+        return jsonify({"error": "Habit not found"}), 404
+
+    conn.execute(
+        '''UPDATE Habits
+           SET title = ?, category = ?, emoji = ?, description = ?, goal = ?
+           WHERE habit_id = ?''',
+        (title, category, emoji, description, goal, habit_id)
+    )
+    conn.commit()
+    conn.close()
+
+    return jsonify({"message": "Habit updated successfully"}), 200
+
+# ─────────────────────────────────────────────────────────────────────────────
+# DELETE /api/habits/<id>  — delete a habit  ✅ NEW ROUTE
+# ─────────────────────────────────────────────────────────────────────────────
+
+@app.route('/api/habits/<int:habit_id>', methods=['DELETE'])
+def delete_habit(habit_id):
+    conn = get_db_connection()
+
+    # Check habit exists
+    existing = conn.execute(
+        'SELECT habit_id FROM Habits WHERE habit_id = ?', (habit_id,)
+    ).fetchone()
+    if not existing:
+        conn.close()
+        return jsonify({"error": "Habit not found"}), 404
+
+    # ON DELETE CASCADE in schema will also delete related Habit_Logs rows
+    conn.execute('DELETE FROM Habits WHERE habit_id = ?', (habit_id,))
+    conn.commit()
+    conn.close()
+
+    return jsonify({"message": "Habit deleted successfully"}), 200
+
+# ─────────────────────────────────────────────────────────────────────────────
+# POST /api/habits/<id>/log  — mark habit as done today
+# ─────────────────────────────────────────────────────────────────────────────
+
 @app.route('/api/habits/<int:habit_id>/log', methods=['POST'])
 def log_habit(habit_id):
-    today = date.today().isoformat()
-    conn = get_db_connection()
+    today     = date.today().isoformat()
+    yesterday = (date.today() - timedelta(days=1)).isoformat()
+
+    conn   = get_db_connection()
     cursor = conn.cursor()
-    
+
+    # Check habit exists
+    habit = cursor.execute(
+        'SELECT * FROM Habits WHERE habit_id = ?', (habit_id,)
+    ).fetchone()
+    if not habit:
+        conn.close()
+        return jsonify({"error": "Habit not found"}), 404
+
     try:
-        # Attempt to insert a log entry for today. 
-        # By our schema, UNIQUE(habit_id, completed_date) will trigger an error if it already exists.
+        # Insert today's log — UNIQUE constraint raises IntegrityError if duplicate
         cursor.execute(
-            'INSERT INTO Habit_Logs (habit_id, completed_date) VALUES (?, ?)', 
+            'INSERT INTO Habit_Logs (habit_id, completed_date) VALUES (?, ?)',
             (habit_id, today)
         )
-        
-        # If successfully logged for the first time today, increment the streak
+
+        # ✅ Correct streak logic:
+        # If last log was yesterday → continue streak, else reset to 1
+        last_log = cursor.execute(
+            '''SELECT completed_date FROM Habit_Logs
+               WHERE habit_id = ? AND completed_date < ?
+               ORDER BY completed_date DESC LIMIT 1''',
+            (habit_id, today)
+        ).fetchone()
+
+        if last_log and last_log['completed_date'] == yesterday:
+            new_streak = habit['current_streak'] + 1
+        else:
+            new_streak = 1
+
+        # Update best_streak if current is higher
+        new_best = max(new_streak, habit['best_streak'])
+
         cursor.execute(
-            'UPDATE Habits SET current_streak = current_streak + 1 WHERE habit_id = ?', 
-            (habit_id,)
+            '''UPDATE Habits
+               SET current_streak = ?, best_streak = ?
+               WHERE habit_id = ?''',
+            (new_streak, new_best, habit_id)
         )
-        
-        # Get updated streak to return
-        cursor.execute('SELECT current_streak FROM Habits WHERE habit_id = ?', (habit_id,))
-        new_streak = cursor.fetchone()['current_streak']
-        
+
         conn.commit()
-        return jsonify({"message": "Habit logged successfully", "current_streak": new_streak}), 200
-        
+        return jsonify({
+            "message":        "Habit logged successfully",
+            "current_streak": new_streak,
+            "best_streak":    new_best
+        }), 200
+
     except sqlite3.IntegrityError:
-        # If it fails, that means we already logged it today.
         conn.rollback()
         return jsonify({"error": "Habit already logged for today"}), 400
+
     finally:
         conn.close()
 
+# ─────────────────────────────────────────────────────────────────────────────
+# RUN
+# ─────────────────────────────────────────────────────────────────────────────
+
 if __name__ == '__main__':
-    # Run the app locally in debug mode
     app.run(debug=True, port=5000)
