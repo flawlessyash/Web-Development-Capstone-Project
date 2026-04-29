@@ -681,10 +681,255 @@ function initEvents() {
     searchQuery = e.target.value;
     renderHabitGrid();
   });
+
+  // ── Calendar ──────────────────────────────────────────────
+  document.getElementById('calendar-toggle-btn').addEventListener('click', toggleCalendar);
+  document.getElementById('cal-prev-btn').addEventListener('click', prevMonth);
+  document.getElementById('cal-next-btn').addEventListener('click', nextMonth);
+  document.getElementById('popover-close-btn').addEventListener('click', closeDayPopover);
+
+  // Close popover on outside click
+  document.addEventListener('click', e => {
+    const popover = document.getElementById('day-popover');
+    if (!popover.hidden && !popover.contains(e.target) && !e.target.closest('.cal-cell')) {
+      closeDayPopover();
+    }
+  });
+
+  // Escape closes modals + popover
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+      closeModal('modal-overlay');
+      closeModal('delete-overlay');
+      closeDayPopover();
+    }
+  });
 }
 
 /* =============================================
-   19. INIT
+   19. CALENDAR
+   ============================================= */
+
+const MONTH_NAMES = [
+  'January','February','March','April','May','June',
+  'July','August','September','October','November','December'
+];
+
+const calState = {
+  year:    new Date().getFullYear(),
+  month:   new Date().getMonth() + 1,  // 1-based
+  data:    null,
+  visible: false,
+};
+
+async function fetchCalendar(year, month) {
+  const pad = n => String(n).padStart(2, '0');
+  const res = await fetch(`/api/calendar?month=${year}-${pad(month)}`);
+  if (!res.ok) throw new Error('Calendar fetch failed');
+  return res.json();
+}
+
+async function renderCalendar() {
+  const { year, month } = calState;
+
+  document.getElementById('cal-month-title').textContent =
+    `${MONTH_NAMES[month - 1]} ${year}`;
+
+  try {
+    calState.data = await fetchCalendar(year, month);
+  } catch {
+    showToast('❌ Could not load calendar');
+    return;
+  }
+
+  const { days, habits: allHabits } = calState.data;
+
+  const habitMap = {};
+  allHabits.forEach(h => { habitMap[h.habit_id] = h; });
+
+  const grid = document.getElementById('cal-grid');
+  grid.innerHTML = '';
+
+  const today      = todayISO();
+  const firstDate  = new Date(`${year}-${String(month).padStart(2,'0')}-01T12:00:00`);
+  const startDow   = firstDate.getDay();
+  const daysInMonth = new Date(year, month, 0).getDate();
+
+  // Blank cells before day 1
+  for (let i = 0; i < startDow; i++) {
+    const blank = document.createElement('div');
+    blank.className = 'cal-cell cal-cell--outside';
+    grid.appendChild(blank);
+  }
+
+  // Day cells
+  for (let d = 1; d <= daysInMonth; d++) {
+    const iso      = `${year}-${String(month).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const isToday  = iso === today;
+    const isFuture = iso > today;
+    const doneIds  = days[iso] || [];
+    const hasLogs  = doneIds.length > 0;
+
+    const cell = document.createElement('div');
+    cell.className = [
+      'cal-cell',
+      isToday  ? 'cal-cell--today'    : '',
+      isFuture ? 'cal-cell--future'   : '',
+      hasLogs  ? 'cal-cell--has-logs' : '',
+    ].filter(Boolean).join(' ');
+    cell.dataset.iso = iso;
+    cell.setAttribute('role', 'gridcell');
+    cell.setAttribute('tabindex', isFuture ? '-1' : '0');
+
+    // Date number
+    const numEl = document.createElement('div');
+    numEl.className = 'cal-cell__num';
+    numEl.textContent = d;
+    cell.appendChild(numEl);
+
+    // Category dots
+    if (hasLogs) {
+      const dotsWrap = document.createElement('div');
+      dotsWrap.className = 'cal-dots';
+      const MAX_DOTS = 4;
+      doneIds.slice(0, MAX_DOTS).forEach(id => {
+        const h = habitMap[id];
+        if (!h) return;
+        const dot = document.createElement('span');
+        dot.className = `cal-dot cal-dot--${h.category}`;
+        dot.title = h.title;
+        dotsWrap.appendChild(dot);
+      });
+      if (doneIds.length > MAX_DOTS) {
+        const ov = document.createElement('span');
+        ov.className = 'cal-cell__overflow';
+        ov.textContent = `+${doneIds.length - MAX_DOTS}`;
+        dotsWrap.appendChild(ov);
+      }
+      cell.appendChild(dotsWrap);
+    }
+
+    // Click → popover
+    if (!isFuture) {
+      cell.addEventListener('click', e => openDayPopover(iso, cell, habitMap, e));
+      cell.addEventListener('keydown', e => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          openDayPopover(iso, cell, habitMap, e);
+        }
+      });
+    }
+
+    grid.appendChild(cell);
+  }
+
+  // Staggered entrance index
+  grid.querySelectorAll('.cal-cell:not(.cal-cell--outside)').forEach((c, i) => {
+    c.style.setProperty('--i', i);
+  });
+}
+
+function openDayPopover(iso, cell, habitMap, event) {
+  event.stopPropagation();
+  const popover = document.getElementById('day-popover');
+  const dateEl  = document.getElementById('popover-date');
+  const bodyEl  = document.getElementById('popover-body');
+
+  const d = new Date(iso + 'T12:00:00');
+  dateEl.textContent = d.toLocaleDateString('en-IN', {
+    weekday: 'short', day: 'numeric', month: 'long', year: 'numeric'
+  });
+
+  bodyEl.innerHTML = '';
+  const { days, habits: allHabits } = calState.data;
+  const doneSet = new Set(days[iso] || []);
+
+  if (!allHabits.length) {
+    bodyEl.innerHTML = '<p class="popover-empty">No habits yet.</p>';
+  } else {
+    const done   = allHabits.filter(h =>  doneSet.has(h.habit_id));
+    const missed = allHabits.filter(h => !doneSet.has(h.habit_id));
+
+    if (!done.length && !missed.length) {
+      bodyEl.innerHTML = '<p class="popover-empty">Nothing tracked this day.</p>';
+    }
+    done.forEach(h => {
+      const row = document.createElement('div');
+      row.className = 'popover-row popover-row--done';
+      row.innerHTML = `<span class="popover-row__icon">${h.emoji}</span>
+        <span class="popover-row__name">${escapeHtml(h.title)}</span>
+        <span class="popover-row__status">✓</span>`;
+      bodyEl.appendChild(row);
+    });
+    missed.forEach(h => {
+      const row = document.createElement('div');
+      row.className = 'popover-row popover-row--miss';
+      row.innerHTML = `<span class="popover-row__icon">${h.emoji}</span>
+        <span class="popover-row__name">${escapeHtml(h.title)}</span>
+        <span class="popover-row__status">○</span>`;
+      bodyEl.appendChild(row);
+    });
+  }
+
+  // Position near cell, flip if near edges
+  const rect = cell.getBoundingClientRect();
+  const vw = window.innerWidth, vh = window.innerHeight;
+  const popW = 280;
+  let left = rect.left;
+  if (left + popW > vw - 10) left = vw - popW - 10;
+  let top = rect.bottom + 6;
+  if (top + 280 > vh) top = rect.top - 280 - 6;
+  popover.style.left = `${Math.max(8, left)}px`;
+  popover.style.top  = `${Math.max(8, top)}px`;
+  popover.hidden = false;
+}
+
+function closeDayPopover() {
+  const popover = document.getElementById('day-popover');
+  if (popover.hidden) return;
+  popover.classList.add('is-closing');
+  popover.addEventListener('animationend', () => {
+    popover.hidden = true;
+    popover.classList.remove('is-closing');
+  }, { once: true });
+}
+
+function prevMonth() {
+  if (calState.month === 1) { calState.year--; calState.month = 12; }
+  else { calState.month--; }
+  renderCalendar();
+}
+
+function nextMonth() {
+  const now = new Date();
+  if (calState.year === now.getFullYear() && calState.month === now.getMonth() + 1) return;
+  if (calState.month === 12) { calState.year++; calState.month = 1; }
+  else { calState.month++; }
+  renderCalendar();
+}
+
+function toggleCalendar() {
+  const section = document.getElementById('calendar-section');
+  const btn     = document.getElementById('calendar-toggle-btn');
+
+  if (calState.visible) {
+    calState.visible = false;
+    btn.classList.remove('active');
+    section.classList.add('is-closing');
+    section.addEventListener('animationend', () => {
+      section.hidden = true;
+      section.classList.remove('is-closing');
+    }, { once: true });
+  } else {
+    calState.visible = true;
+    btn.classList.add('active');
+    section.hidden = false;
+    renderCalendar();
+  }
+}
+
+/* =============================================
+   20. INIT
    ============================================= */
 
 async function init() {

@@ -7,7 +7,9 @@
   <title>Streakr — Habit Tracker</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap"
+    rel="stylesheet" />
   <!-- ✅ FIX: Only ONE link to style.css using Flask's url_for -->
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
 </head>
@@ -27,8 +29,12 @@
         </div>
         <div class="header__meta">
           <p class="header__greeting" id="greeting"></p>
-          <button class="btn btn--icon theme-toggle" id="theme-toggle" aria-label="Toggle light/dark mode" title="Toggle theme">
+          <button class="btn btn--icon theme-toggle" id="theme-toggle" aria-label="Toggle light/dark mode"
+            title="Toggle theme">
             <span class="theme-toggle__icon" id="theme-icon">☀️</span>
+          </button>
+          <button class="btn btn--calendar" id="calendar-toggle-btn" aria-label="Toggle calendar view" title="Calendar">
+            📅 Calendar
           </button>
           <button class="btn btn--primary" id="open-modal-btn" aria-label="Add a new habit">
             + New Habit
@@ -46,7 +52,7 @@
         <!-- Progress Ring -->
         <div class="progress-ring-wrap" aria-label="Today's completion progress">
           <svg class="progress-ring" viewBox="0 0 80 80" aria-hidden="true">
-            <circle class="progress-ring__bg"   cx="40" cy="40" r="32" />
+            <circle class="progress-ring__bg" cx="40" cy="40" r="32" />
             <circle class="progress-ring__fill" cx="40" cy="40" r="32" id="ring-fill" />
           </svg>
           <div class="progress-ring__label">
@@ -114,12 +120,44 @@
           </select>
 
           <label for="search-input" class="sr-only">Search habits</label>
-          <input type="search" id="search-input" class="search-input" placeholder="Search habits..." aria-label="Search habits" />
+          <input type="search" id="search-input" class="search-input" placeholder="Search habits..."
+            aria-label="Search habits" />
         </div>
 
       </div>
     </div>
   </section>
+
+  <!-- CALENDAR SECTION -->
+  <section class="calendar-section" id="calendar-section" hidden aria-label="Monthly habit calendar">
+    <div class="container">
+      <div class="calendar-nav">
+        <button class="cal-nav-btn" id="cal-prev-btn" aria-label="Previous month">&#8592;</button>
+        <h2 class="cal-month-title" id="cal-month-title"></h2>
+        <button class="cal-nav-btn" id="cal-next-btn" aria-label="Next month">&#8594;</button>
+      </div>
+      <div class="cal-dow-row" role="row" aria-hidden="true">
+        <span>Su</span><span>Mo</span><span>Tu</span>
+        <span>We</span><span>Th</span><span>Fr</span><span>Sa</span>
+      </div>
+      <div class="cal-grid" id="cal-grid" role="grid" aria-label="Calendar"></div>
+      <div class="cal-legend">
+        <span class="cal-legend-item"><span class="cal-legend-dot" style="background:var(--color-health)"></span>Health</span>
+        <span class="cal-legend-item"><span class="cal-legend-dot" style="background:var(--color-learning)"></span>Learning</span>
+        <span class="cal-legend-item"><span class="cal-legend-dot" style="background:var(--color-productivity)"></span>Productivity</span>
+        <span class="cal-legend-item"><span class="cal-legend-dot" style="background:var(--color-mindfulness)"></span>Mindfulness</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- DAY POPOVER -->
+  <div class="day-popover" id="day-popover" hidden role="dialog" aria-modal="false" aria-label="Habits for selected day">
+    <div class="day-popover__header">
+      <span class="day-popover__date" id="popover-date"></span>
+      <button class="day-popover__close" id="popover-close-btn" aria-label="Close">&times;</button>
+    </div>
+    <div class="day-popover__body" id="popover-body"></div>
+  </div>
 
   <!-- MAIN -->
   <main class="main" id="main-content">
@@ -133,12 +171,18 @@
         <h2 class="empty-state__heading">No habits yet</h2>
         <p class="empty-state__text">Pick an idea to get started, or create your own.</p>
         <div class="empty-state__suggestions">
-          <button class="suggestion-chip" data-name="Morning run"      data-category="health"       data-emoji="🏃">🏃 Morning run</button>
-          <button class="suggestion-chip" data-name="Read 30 minutes"  data-category="learning"     data-emoji="📖">📖 Read 30 min</button>
-          <button class="suggestion-chip" data-name="Drink 2L water"   data-category="health"       data-emoji="💧">💧 Drink water</button>
-          <button class="suggestion-chip" data-name="Meditate"         data-category="mindfulness"  data-emoji="🧘">🧘 Meditate</button>
-          <button class="suggestion-chip" data-name="No social media"  data-category="productivity" data-emoji="📵">📵 No social media</button>
-          <button class="suggestion-chip" data-name="Journal"          data-category="mindfulness"  data-emoji="📓">📓 Journal</button>
+          <button class="suggestion-chip" data-name="Morning run" data-category="health" data-emoji="🏃">🏃 Morning
+            run</button>
+          <button class="suggestion-chip" data-name="Read 30 minutes" data-category="learning" data-emoji="📖">📖 Read
+            30 min</button>
+          <button class="suggestion-chip" data-name="Drink 2L water" data-category="health" data-emoji="💧">💧 Drink
+            water</button>
+          <button class="suggestion-chip" data-name="Meditate" data-category="mindfulness" data-emoji="🧘">🧘
+            Meditate</button>
+          <button class="suggestion-chip" data-name="No social media" data-category="productivity" data-emoji="📵">📵 No
+            social media</button>
+          <button class="suggestion-chip" data-name="Journal" data-category="mindfulness" data-emoji="📓">📓
+            Journal</button>
         </div>
         <button class="btn btn--primary" id="empty-add-btn">+ Create custom habit</button>
       </div>
@@ -182,8 +226,8 @@
 
         <div class="form-group">
           <label class="form-label" for="habit-name">Habit Name <span aria-hidden="true">*</span></label>
-          <input type="text" id="habit-name" class="form-input" placeholder="e.g. Read for 30 minutes"
-            maxlength="60" required aria-required="true" />
+          <input type="text" id="habit-name" class="form-input" placeholder="e.g. Read for 30 minutes" maxlength="60"
+            required aria-required="true" />
           <span class="form-error" id="name-error" role="alert"></span>
         </div>
 
@@ -211,8 +255,8 @@
           <label class="form-label" for="habit-desc">Why this habit?
             <span class="form-label--optional">(optional)</span>
           </label>
-          <textarea id="habit-desc" class="form-textarea"
-            placeholder="Your motivation — helps you stay consistent!" rows="2" maxlength="200"></textarea>
+          <textarea id="habit-desc" class="form-textarea" placeholder="Your motivation — helps you stay consistent!"
+            rows="2" maxlength="200"></textarea>
         </div>
 
         <div class="modal__actions">
@@ -229,7 +273,8 @@
       <div class="modal__header">
         <h2 class="modal__title" id="delete-title">Delete Habit?</h2>
       </div>
-      <p class="modal__body-text">This will permanently delete the habit and its entire streak history. This cannot be undone.</p>
+      <p class="modal__body-text">This will permanently delete the habit and its entire streak history. This cannot be
+        undone.</p>
       <div class="modal__actions">
         <button class="btn btn--ghost" id="cancel-delete-btn">Cancel</button>
         <button class="btn btn--danger" id="confirm-delete-btn">Delete</button>

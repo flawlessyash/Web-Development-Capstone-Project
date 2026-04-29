@@ -253,6 +253,52 @@ def log_habit(habit_id):
         conn.close()
 
 # ─────────────────────────────────────────────────────────────────────────────
+# GET /api/calendar?month=YYYY-MM  — completions grouped by date for a month
+# ─────────────────────────────────────────────────────────────────────────────
+
+@app.route('/api/calendar', methods=['GET'])
+def get_calendar():
+    month_str = request.args.get('month', date.today().strftime('%Y-%m'))
+    try:
+        year  = int(month_str[:4])
+        month = int(month_str[5:7])
+        if not (1 <= month <= 12):
+            raise ValueError
+    except (ValueError, IndexError):
+        return jsonify({"error": "Invalid month format. Use YYYY-MM"}), 400
+
+    first_day = date(year, month, 1)
+    if month == 12:
+        last_day = date(year + 1, 1, 1) - timedelta(days=1)
+    else:
+        last_day = date(year, month + 1, 1) - timedelta(days=1)
+
+    conn = get_db_connection()
+
+    habits_rows = conn.execute(
+        'SELECT habit_id, title, emoji, category FROM Habits ORDER BY created_at ASC'
+    ).fetchall()
+    habits_list = [dict(h) for h in habits_rows]
+
+    logs = conn.execute(
+        '''SELECT habit_id, completed_date
+           FROM Habit_Logs
+           WHERE completed_date >= ? AND completed_date <= ?
+           ORDER BY completed_date ASC''',
+        (first_day.isoformat(), last_day.isoformat())
+    ).fetchall()
+    conn.close()
+
+    days = {}
+    for log in logs:
+        d = log['completed_date']
+        if d not in days:
+            days[d] = []
+        days[d].append(log['habit_id'])
+
+    return jsonify({"year": year, "month": month, "days": days, "habits": habits_list})
+
+# ─────────────────────────────────────────────────────────────────────────────
 # RUN
 # ─────────────────────────────────────────────────────────────────────────────
 
