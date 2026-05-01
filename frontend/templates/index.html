@@ -10,7 +10,7 @@
   <link
     href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap"
     rel="stylesheet" />
-  <!-- ✅ FIX: Only ONE link to style.css using Flask's url_for -->
+
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
   <!-- Iconify — Phosphor silhouette SVG icons, no emojis -->
   <script src="https://code.iconify.design/iconify-icon/2.1.0/iconify-icon.min.js"></script>
@@ -36,11 +36,7 @@
             <span class="theme-toggle__icon" id="theme-icon">☀️</span>
           </button>
           <button class="btn btn--calendar" id="calendar-toggle-btn" aria-label="Toggle calendar view" title="Calendar">
-<<<<<<< HEAD
-            📅 Calendar
-=======
             <iconify-icon icon="ph:calendar-dots-bold" width="16"></iconify-icon> Calendar
->>>>>>> c96872d (Made changes in Calendar)
           </button>
           <button class="btn btn--primary" id="open-modal-btn" aria-label="Add a new habit">
             + New Habit
@@ -70,28 +66,32 @@
         <!-- Stat Cards -->
         <div class="stats__grid">
           <div class="stat-card">
-            <span class="stat-card__icon" aria-hidden="true"><iconify-icon icon="ph:list-checks-bold" width="26"></iconify-icon></span>
+            <span class="stat-card__icon" aria-hidden="true"><iconify-icon icon="ph:list-checks-bold"
+                width="26"></iconify-icon></span>
             <div>
               <span class="stat-card__label">Total Habits</span>
               <strong class="stat-card__value" id="stat-total">0</strong>
             </div>
           </div>
           <div class="stat-card">
-            <span class="stat-card__icon" aria-hidden="true"><iconify-icon icon="ph:check-circle-bold" width="26"></iconify-icon></span>
+            <span class="stat-card__icon" aria-hidden="true"><iconify-icon icon="ph:check-circle-bold"
+                width="26"></iconify-icon></span>
             <div>
               <span class="stat-card__label">Done Today</span>
               <strong class="stat-card__value" id="stat-done">0</strong>
             </div>
           </div>
           <div class="stat-card">
-            <span class="stat-card__icon" aria-hidden="true"><iconify-icon icon="ph:lightning-bold" width="26"></iconify-icon></span>
+            <span class="stat-card__icon" aria-hidden="true"><iconify-icon icon="ph:lightning-bold"
+                width="26"></iconify-icon></span>
             <div>
               <span class="stat-card__label">Best Streak</span>
               <strong class="stat-card__value" id="stat-best">0</strong>
             </div>
           </div>
           <div class="stat-card">
-            <span class="stat-card__icon" aria-hidden="true"><iconify-icon icon="ph:trend-up-bold" width="26"></iconify-icon></span>
+            <span class="stat-card__icon" aria-hidden="true"><iconify-icon icon="ph:trend-up-bold"
+                width="26"></iconify-icon></span>
             <div>
               <span class="stat-card__label">This Week</span>
               <strong class="stat-card__value" id="stat-week">0%</strong>
@@ -134,34 +134,11 @@
     </div>
   </section>
 
-<<<<<<< HEAD
-  <!-- CALENDAR SECTION -->
-  <section class="calendar-section" id="calendar-section" hidden aria-label="Monthly habit calendar">
-    <div class="container">
-      <div class="calendar-nav">
-        <button class="cal-nav-btn" id="cal-prev-btn" aria-label="Previous month">&#8592;</button>
-        <h2 class="cal-month-title" id="cal-month-title"></h2>
-        <button class="cal-nav-btn" id="cal-next-btn" aria-label="Next month">&#8594;</button>
-      </div>
-      <div class="cal-dow-row" role="row" aria-hidden="true">
-        <span>Su</span><span>Mo</span><span>Tu</span>
-        <span>We</span><span>Th</span><span>Fr</span><span>Sa</span>
-      </div>
-      <div class="cal-grid" id="cal-grid" role="grid" aria-label="Calendar"></div>
-      <div class="cal-legend">
-        <span class="cal-legend-item"><span class="cal-legend-dot" style="background:var(--color-health)"></span>Health</span>
-        <span class="cal-legend-item"><span class="cal-legend-dot" style="background:var(--color-learning)"></span>Learning</span>
-        <span class="cal-legend-item"><span class="cal-legend-dot" style="background:var(--color-productivity)"></span>Productivity</span>
-        <span class="cal-legend-item"><span class="cal-legend-dot" style="background:var(--color-mindfulness)"></span>Mindfulness</span>
-      </div>
-    </div>
-  </section>
-=======
 
->>>>>>> c96872d (Made changes in Calendar)
 
-  <!-- DAY POPOVER -->
-  <div class="day-popover" id="day-popover" hidden role="dialog" aria-modal="false" aria-label="Habits for selected day">
+
+  <div class="day-popover" id="day-popover" hidden role="dialog" aria-modal="false"
+    aria-label="Habits for selected day">
     <div class="day-popover__header">
       <span class="day-popover__date" id="popover-date"></span>
       <button class="day-popover__close" id="popover-close-btn" aria-label="Close">&times;</button>
@@ -194,7 +171,8 @@
         <div class="cal-detail-panel" id="cal-detail-panel">
           <!-- empty prompt -->
           <div class="cal-detail__empty" id="cal-detail-empty">
-            <iconify-icon icon="ph:calendar-blank-bold" width="48" style="color:var(--color-border-light)"></iconify-icon>
+            <iconify-icon icon="ph:calendar-blank-bold" width="48"
+              style="color:var(--color-border-light)"></iconify-icon>
             <p>Select a day to view habits</p>
           </div>
           <!-- content (shown when a day is selected) -->
@@ -220,27 +198,23 @@
         <h2 class="empty-state__heading">No habits yet</h2>
         <p class="empty-state__text">Pick an idea to get started, or create your own.</p>
         <div class="empty-state__suggestions">
-<<<<<<< HEAD
-          <button class="suggestion-chip" data-name="Morning run" data-category="health" data-emoji="🏃">🏃 Morning
-            run</button>
-          <button class="suggestion-chip" data-name="Read 30 minutes" data-category="learning" data-emoji="📖">📖 Read
-            30 min</button>
-          <button class="suggestion-chip" data-name="Drink 2L water" data-category="health" data-emoji="💧">💧 Drink
-            water</button>
-          <button class="suggestion-chip" data-name="Meditate" data-category="mindfulness" data-emoji="🧘">🧘
+          <button class="suggestion-chip" data-name="Morning run" data-category="health"
+            data-emoji="ph:person-simple-run-bold"><iconify-icon icon="ph:person-simple-run-bold"
+              width="15"></iconify-icon> Morning run</button>
+          <button class="suggestion-chip" data-name="Read 30 minutes" data-category="learning"
+            data-emoji="ph:book-open-bold"><iconify-icon icon="ph:book-open-bold" width="15"></iconify-icon> Read 30
+            min</button>
+          <button class="suggestion-chip" data-name="Drink 2L water" data-category="health"
+            data-emoji="ph:drop-bold"><iconify-icon icon="ph:drop-bold" width="15"></iconify-icon> Drink water</button>
+          <button class="suggestion-chip" data-name="Meditate" data-category="mindfulness"
+            data-emoji="ph:person-simple-bold"><iconify-icon icon="ph:person-simple-bold" width="15"></iconify-icon>
             Meditate</button>
-          <button class="suggestion-chip" data-name="No social media" data-category="productivity" data-emoji="📵">📵 No
-            social media</button>
-          <button class="suggestion-chip" data-name="Journal" data-category="mindfulness" data-emoji="📓">📓
+          <button class="suggestion-chip" data-name="No social media" data-category="productivity"
+            data-emoji="ph:device-mobile-slash-bold"><iconify-icon icon="ph:device-mobile-slash-bold"
+              width="15"></iconify-icon> No social media</button>
+          <button class="suggestion-chip" data-name="Journal" data-category="mindfulness"
+            data-emoji="ph:notebook-bold"><iconify-icon icon="ph:notebook-bold" width="15"></iconify-icon>
             Journal</button>
-=======
-          <button class="suggestion-chip" data-name="Morning run" data-category="health" data-emoji="ph:person-simple-run-bold"><iconify-icon icon="ph:person-simple-run-bold" width="15"></iconify-icon> Morning run</button>
-          <button class="suggestion-chip" data-name="Read 30 minutes" data-category="learning" data-emoji="ph:book-open-bold"><iconify-icon icon="ph:book-open-bold" width="15"></iconify-icon> Read 30 min</button>
-          <button class="suggestion-chip" data-name="Drink 2L water" data-category="health" data-emoji="ph:drop-bold"><iconify-icon icon="ph:drop-bold" width="15"></iconify-icon> Drink water</button>
-          <button class="suggestion-chip" data-name="Meditate" data-category="mindfulness" data-emoji="ph:person-simple-bold"><iconify-icon icon="ph:person-simple-bold" width="15"></iconify-icon> Meditate</button>
-          <button class="suggestion-chip" data-name="No social media" data-category="productivity" data-emoji="ph:device-mobile-slash-bold"><iconify-icon icon="ph:device-mobile-slash-bold" width="15"></iconify-icon> No social media</button>
-          <button class="suggestion-chip" data-name="Journal" data-category="mindfulness" data-emoji="ph:notebook-bold"><iconify-icon icon="ph:notebook-bold" width="15"></iconify-icon> Journal</button>
->>>>>>> c96872d (Made changes in Calendar)
         </div>
         <button class="btn btn--primary" id="empty-add-btn">+ Create custom habit</button>
       </div>
@@ -263,26 +237,46 @@
         <div class="form-group">
           <label class="form-label">Choose an Icon</label>
           <div class="emoji-picker" id="emoji-picker" role="group" aria-label="Choose habit icon">
-            <button type="button" class="emoji-btn emoji-btn--active" data-emoji="ph:star-bold"       title="Star">      <iconify-icon icon="ph:star-bold"                 width="22"></iconify-icon></button>
-            <button type="button" class="emoji-btn" data-emoji="ph:person-simple-run-bold"            title="Run">       <iconify-icon icon="ph:person-simple-run-bold"   width="22"></iconify-icon></button>
-            <button type="button" class="emoji-btn" data-emoji="ph:book-open-bold"                   title="Read">      <iconify-icon icon="ph:book-open-bold"           width="22"></iconify-icon></button>
-            <button type="button" class="emoji-btn" data-emoji="ph:drop-bold"                        title="Water">     <iconify-icon icon="ph:drop-bold"                width="22"></iconify-icon></button>
-            <button type="button" class="emoji-btn" data-emoji="ph:person-simple-bold"               title="Meditate">  <iconify-icon icon="ph:person-simple-bold"       width="22"></iconify-icon></button>
-            <button type="button" class="emoji-btn" data-emoji="ph:barbell-bold"                     title="Workout">   <iconify-icon icon="ph:barbell-bold"             width="22"></iconify-icon></button>
-            <button type="button" class="emoji-btn" data-emoji="ph:target-bold"                      title="Goal">      <iconify-icon icon="ph:target-bold"              width="22"></iconify-icon></button>
-            <button type="button" class="emoji-btn" data-emoji="ph:apple-logo-bold"                  title="Eat well">  <iconify-icon icon="ph:apple-logo-bold"          width="22"></iconify-icon></button>
-            <button type="button" class="emoji-btn" data-emoji="ph:pencil-bold"                      title="Write">     <iconify-icon icon="ph:pencil-bold"              width="22"></iconify-icon></button>
-            <button type="button" class="emoji-btn" data-emoji="ph:moon-bold"                        title="Sleep">     <iconify-icon icon="ph:moon-bold"                width="22"></iconify-icon></button>
-            <button type="button" class="emoji-btn" data-emoji="ph:bicycle-bold"                     title="Cycle">     <iconify-icon icon="ph:bicycle-bold"             width="22"></iconify-icon></button>
-            <button type="button" class="emoji-btn" data-emoji="ph:notebook-bold"                    title="Journal">   <iconify-icon icon="ph:notebook-bold"            width="22"></iconify-icon></button>
-            <button type="button" class="emoji-btn" data-emoji="ph:pill-bold"                        title="Medicine">  <iconify-icon icon="ph:pill-bold"                width="22"></iconify-icon></button>
-            <button type="button" class="emoji-btn" data-emoji="ph:device-mobile-slash-bold"         title="No phone">  <iconify-icon icon="ph:device-mobile-slash-bold" width="22"></iconify-icon></button>
-            <button type="button" class="emoji-btn" data-emoji="ph:music-notes-bold"                 title="Music">     <iconify-icon icon="ph:music-notes-bold"          width="22"></iconify-icon></button>
-            <button type="button" class="emoji-btn" data-emoji="ph:heartbeat-bold"                   title="Health">    <iconify-icon icon="ph:heartbeat-bold"           width="22"></iconify-icon></button>
-            <button type="button" class="emoji-btn" data-emoji="ph:brain-bold"                       title="Study">     <iconify-icon icon="ph:brain-bold"               width="22"></iconify-icon></button>
-            <button type="button" class="emoji-btn" data-emoji="ph:currency-dollar-bold"             title="Finance">   <iconify-icon icon="ph:currency-dollar-bold"     width="22"></iconify-icon></button>
-            <button type="button" class="emoji-btn" data-emoji="ph:flame-bold"                       title="Streak">    <iconify-icon icon="ph:flame-bold"               width="22"></iconify-icon></button>
-            <button type="button" class="emoji-btn" data-emoji="ph:leaf-bold"                        title="Nature">    <iconify-icon icon="ph:leaf-bold"                width="22"></iconify-icon></button>
+            <button type="button" class="emoji-btn emoji-btn--active" data-emoji="ph:star-bold" title="Star">
+              <iconify-icon icon="ph:star-bold" width="22"></iconify-icon></button>
+            <button type="button" class="emoji-btn" data-emoji="ph:person-simple-run-bold" title="Run"> <iconify-icon
+                icon="ph:person-simple-run-bold" width="22"></iconify-icon></button>
+            <button type="button" class="emoji-btn" data-emoji="ph:book-open-bold" title="Read"> <iconify-icon
+                icon="ph:book-open-bold" width="22"></iconify-icon></button>
+            <button type="button" class="emoji-btn" data-emoji="ph:drop-bold" title="Water"> <iconify-icon
+                icon="ph:drop-bold" width="22"></iconify-icon></button>
+            <button type="button" class="emoji-btn" data-emoji="ph:person-simple-bold" title="Meditate"> <iconify-icon
+                icon="ph:person-simple-bold" width="22"></iconify-icon></button>
+            <button type="button" class="emoji-btn" data-emoji="ph:barbell-bold" title="Workout"> <iconify-icon
+                icon="ph:barbell-bold" width="22"></iconify-icon></button>
+            <button type="button" class="emoji-btn" data-emoji="ph:target-bold" title="Goal"> <iconify-icon
+                icon="ph:target-bold" width="22"></iconify-icon></button>
+            <button type="button" class="emoji-btn" data-emoji="ph:apple-logo-bold" title="Eat well"> <iconify-icon
+                icon="ph:apple-logo-bold" width="22"></iconify-icon></button>
+            <button type="button" class="emoji-btn" data-emoji="ph:pencil-bold" title="Write"> <iconify-icon
+                icon="ph:pencil-bold" width="22"></iconify-icon></button>
+            <button type="button" class="emoji-btn" data-emoji="ph:moon-bold" title="Sleep"> <iconify-icon
+                icon="ph:moon-bold" width="22"></iconify-icon></button>
+            <button type="button" class="emoji-btn" data-emoji="ph:bicycle-bold" title="Cycle"> <iconify-icon
+                icon="ph:bicycle-bold" width="22"></iconify-icon></button>
+            <button type="button" class="emoji-btn" data-emoji="ph:notebook-bold" title="Journal"> <iconify-icon
+                icon="ph:notebook-bold" width="22"></iconify-icon></button>
+            <button type="button" class="emoji-btn" data-emoji="ph:pill-bold" title="Medicine"> <iconify-icon
+                icon="ph:pill-bold" width="22"></iconify-icon></button>
+            <button type="button" class="emoji-btn" data-emoji="ph:device-mobile-slash-bold" title="No phone">
+              <iconify-icon icon="ph:device-mobile-slash-bold" width="22"></iconify-icon></button>
+            <button type="button" class="emoji-btn" data-emoji="ph:music-notes-bold" title="Music"> <iconify-icon
+                icon="ph:music-notes-bold" width="22"></iconify-icon></button>
+            <button type="button" class="emoji-btn" data-emoji="ph:heartbeat-bold" title="Health"> <iconify-icon
+                icon="ph:heartbeat-bold" width="22"></iconify-icon></button>
+            <button type="button" class="emoji-btn" data-emoji="ph:brain-bold" title="Study"> <iconify-icon
+                icon="ph:brain-bold" width="22"></iconify-icon></button>
+            <button type="button" class="emoji-btn" data-emoji="ph:currency-dollar-bold" title="Finance"> <iconify-icon
+                icon="ph:currency-dollar-bold" width="22"></iconify-icon></button>
+            <button type="button" class="emoji-btn" data-emoji="ph:flame-bold" title="Streak"> <iconify-icon
+                icon="ph:flame-bold" width="22"></iconify-icon></button>
+            <button type="button" class="emoji-btn" data-emoji="ph:leaf-bold" title="Nature"> <iconify-icon
+                icon="ph:leaf-bold" width="22"></iconify-icon></button>
           </div>
           <input type="hidden" id="habit-emoji" value="ph:star-bold" />
         </div>
@@ -348,7 +342,6 @@
   <!-- TOAST -->
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-  <!-- ✅ FIX: Only ONE script tag at the bottom, using url_for -->
   <script src="{{ url_for('static', filename='app.js') }}"></script>
 </body>
 
