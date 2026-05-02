@@ -5,13 +5,14 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Streakr — Habit Tracker</title>
+  <meta name="description" content="Streakr: a beautiful habit tracker to build streaks, track progress, and stay consistent every day." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link
     href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap"
     rel="stylesheet" />
 
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+  <link rel="stylesheet" href="static/style.css" />
   <!-- Iconify — Phosphor silhouette SVG icons, no emojis -->
   <script src="https://code.iconify.design/iconify-icon/2.1.0/iconify-icon.min.js"></script>
 </head>
@@ -342,7 +343,7 @@
   <!-- TOAST -->
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-  <script src="{{ url_for('static', filename='app.js') }}"></script>
+  <script src="static/app.js"></script>
 </body>
 
 </html>
