@@ -25,6 +25,11 @@ const STORAGE_KEY  = 'streakr_habits_v2';
 const THEME_KEY    = 'streakr_theme';
 const MODAL_IDS    = ['modal-overlay', 'delete-overlay'];
 
+/* Backend API base URL — auto-detects local vs. production */
+const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+  ? 'http://localhost:5000'
+  : 'https://streakr-backend.onrender.com';  // ← replace with your actual Render URL after deploy
+
 const DAY_LABELS   = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
 const MILESTONES   = [
   { days: 100, label: '100 days' },
@@ -86,7 +91,7 @@ let habitToDelete = null;
 
 async function loadHabits() {
   try {
-    const res = await fetch('/api/habits');
+    const res = await fetch(`${API_BASE}/api/habits`);
     if (!res.ok) throw new Error('Failed to fetch habits');
     const data = await res.json();
     return data.map(h => ({
@@ -114,7 +119,7 @@ async function loadHabits() {
 
 async function addHabit(name, category, emoji, desc, goal) {
   try {
-    const res = await fetch('/api/habits', {
+    const res = await fetch(`${API_BASE}/api/habits`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ title: name, category, emoji, description: desc, goal })
@@ -152,7 +157,7 @@ async function updateHabit(id, patch) {
       description: patch.desc !== undefined ? patch.desc : existing.desc,
       goal:        patch.goal !== undefined ? patch.goal : existing.goal,
     };
-    const res = await fetch(`/api/habits/${id}`, {
+    const res = await fetch(`${API_BASE}/api/habits/${id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
@@ -170,7 +175,7 @@ async function updateHabit(id, patch) {
 
 async function deleteHabit(id) {
   try {
-    const res = await fetch(`/api/habits/${id}`, { method: 'DELETE' });
+    const res = await fetch(`${API_BASE}/api/habits/${id}`, { method: 'DELETE' });
     if (!res.ok) throw new Error('Failed to delete habit');
     habits = habits.filter(h => h.id !== id);
     showToast('🗑️ Habit deleted.');
@@ -186,7 +191,7 @@ async function markDone(id) {
   if (!h || isDoneToday(h)) return;
 
   try {
-    const res = await fetch(`/api/habits/${id}/log`, { method: 'POST' });
+    const res = await fetch(`${API_BASE}/api/habits/${id}/log`, { method: 'POST' });
     if (!res.ok) {
       const data = await res.json();
       throw new Error(data.error || 'Failed to log habit');
@@ -750,7 +755,7 @@ const calState = {
 
 async function fetchCalendar(year, month) {
   const pad = n => String(n).padStart(2, '0');
-  const res = await fetch(`/api/calendar?month=${year}-${pad(month)}`);
+  const res = await fetch(`${API_BASE}/api/calendar?month=${year}-${pad(month)}`);
   if (!res.ok) throw new Error('Calendar fetch failed');
   return res.json();
 }
