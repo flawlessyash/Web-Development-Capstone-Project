@@ -24,14 +24,23 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Prepare site folder
+        run: |
+          mkdir -p _site
+          cp frontend/index.html _site/index.html
+          touch _site/.nojekyll
+          cp -r frontend/static _site/static
+          echo "=== Verifying deployed files ==="
+          ls -la _site/
+          ls -la _site/static/
+
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
-      - name: Upload frontend as Pages artifact
+      - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          # Deploy the entire frontend/ folder (index.html + static/)
-          path: ./frontend
+          path: _site
 
       - name: Deploy to GitHub Pages
         id: deployment
