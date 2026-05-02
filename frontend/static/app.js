@@ -28,7 +28,7 @@ const MODAL_IDS    = ['modal-overlay', 'delete-overlay'];
 /* Backend API base URL — auto-detects local vs. production */
 const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
   ? 'http://localhost:5000'
-  : 'https://streakr-backend.onrender.com';  // ← replace with your actual Render URL after deploy
+  : 'https://web-development-capstone-project.onrender.com';
 
 const DAY_LABELS   = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
 const MILESTONES   = [
