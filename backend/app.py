@@ -20,12 +20,8 @@ app = Flask(
     static_folder=os.path.join(FRONTEND_DIR, 'static'),
 )
 
-# Allow cross-origin requests from GitHub Pages (and localhost for dev)
-CORS(app, resources={r"/api/*": {"origins": [
-    "http://localhost:*",
-    "http://127.0.0.1:*",
-    "https://flawlessyash.github.io",
-]}})
+# Allow cross-origin requests from any origin (public capstone project)
+CORS(app)
 
 
 # ── DB helper ─────────────────────────────────────────────────────────────────
