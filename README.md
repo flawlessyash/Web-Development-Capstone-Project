@@ -139,13 +139,13 @@ streakr/
 - [x] localStorage (temporary, replaced by Supabase in Step 3)
 
 ### Step 3 — Database & Backend (Supabase)
-- [ ] Supabase project setup
-- [ ] `habits` table with proper schema
-- [ ] `completions` table for streak history
-- [ ] Row Level Security (RLS) policies
-- [ ] Supabase JS client connected to frontend
-- [ ] Replace localStorage with Supabase calls
-- [ ] API latency checked in Supabase dashboard
+- [x] Supabase project setup
+- [x] `habits` table with proper schema
+- [x] `completions` table for streak history
+- [x] Row Level Security (RLS) policies
+- [x] Supabase JS client connected to frontend
+- [x] Replace localStorage with Supabase calls
+- [x] API latency checked in Supabase dashboard
 
 ### Step 4 — Full Stack Integration
 - [ ] All CRUD operations working end-to-end
@@ -226,19 +226,6 @@ open index.html
 #    - Add them to supabase.js
 ```
 
----
-
-## 📅 Timeline
-
-| Date | Milestone |
-|------|-----------|
-| 7–8 April | GitHub repo created ✅ |
-| 24 April | Project plan + README pushed ✅ |
-| 24–26 April | Backend (Supabase) integration |
-| 27 April | Final commit (deadline 11:59pm) |
-| Presentation day | VIVA |
-
----
 
 ## 🤝 Contribution
 
@@ -262,12 +249,5 @@ git commit -m "fix: resolve merge conflict in app.js"
 git push origin main
 ```
 
----
-
-## 📸 Screenshots
-
-> _Add screenshots here after UI is complete_
-
----
 
 *Built with ◆ for Rishihood University Web Dev Capstone — April 2026*
