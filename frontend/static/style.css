@@ -7,48 +7,53 @@
 }
 
 :root {
-  --color-bg:           #f7f4ef;
-  --color-surface:      #ffffff;
-  --color-surface-2:    #f0ece5;
-  --color-border:       #ddd8d0;
-  --color-border-light: #c8c0b5;
-  --color-text-primary: #1c1410;
-  --color-text-secondary:#6b5c4a;
-  --color-text-muted:   #a89880;
-  --color-accent:       #9b6540;
-  --color-accent-dim:   #7a4d2f;
-  --color-accent-bg:    #f5ede3;
-  --color-success:      #4a7c59;
-  --color-danger:       #b85450;
-  --color-health:       #4a7c59;
-  --color-learning:     #4a6fa5;
-  --color-productivity: #9b6540;
-  --color-mindfulness:  #7c5e8b;
-  --shadow-card: 0 2px 12px rgba(0,0,0,0.07);
-  --shadow-modal: 0 20px 60px rgba(0,0,0,0.14);
+  --color-bg:           #0d0d0f;
+  --color-surface:      #17171a;
+  --color-surface-2:    #1f1f24;
+  --color-border:       #2a2a30;
+  --color-border-light: #38383f;
+  --color-text-primary: #f0efe8;
+  --color-text-secondary:#8c8b88;
+  --color-text-muted:   #55544f;
+
+  --color-accent:       #e8920a;
+  --color-accent-dim:   #a0620a;
+  --color-accent-bg:    #231a09;
+
+  --color-success:      #4caf78;
+  --color-danger:       #e25c5c;
+
+  --color-health:       #4caf78;
+  --color-learning:     #5b9cf6;
+  --color-productivity: #e8920a;
+  --color-mindfulness:  #a78bfa;
+
+  --shadow-card: 0 2px 12px rgba(0,0,0,0.4);
+  --shadow-modal: 0 20px 60px rgba(0,0,0,0.6);
+
   --radius-sm: 6px;
   --radius-md: 10px;
   --radius-lg: 16px;
   --radius-xl: 24px;
+
   --font-display: 'Space Mono', monospace;
   --font-body:    'DM Sans', sans-serif;
+
   --transition: 180ms ease;
 }
 
-[data-theme="dark"] {
-  --color-bg:           #1a1612;
-  --color-surface:      #231e19;
-  --color-surface-2:    #2d271f;
-  --color-border:       #3d342a;
-  --color-border-light: #4d4138;
-  --color-text-primary: #f0ebe3;
-  --color-text-secondary:#a89880;
-  --color-text-muted:   #7a6a55;
-  --color-accent:       #c4854e;
-  --color-accent-dim:   #9b6540;
-  --color-accent-bg:    #2d2018;
-  --shadow-card: 0 2px 12px rgba(0,0,0,0.4);
-  --shadow-modal: 0 20px 60px rgba(0,0,0,0.6);
+[data-theme="light"] {
+  --color-bg:           #f5f4f0;
+  --color-surface:      #ffffff;
+  --color-surface-2:    #f0eff9;
+  --color-border:       #e0dfd8;
+  --color-border-light: #c8c7c0;
+  --color-text-primary: #18181a;
+  --color-text-secondary:#58574f;
+  --color-text-muted:   #a0998c;
+  --color-accent-bg:    #fff3e0;
+  --shadow-card: 0 2px 12px rgba(0,0,0,0.08);
+  --shadow-modal: 0 20px 60px rgba(0,0,0,0.18);
 }
 
 html { scroll-behavior: smooth; }
@@ -257,7 +262,7 @@ body {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  transition: border-color var(--transition), transform 300ms cubic-bezier(0.34,1.56,0.64,1), box-shadow var(--transition);
+  transition: border-color var(--transition), box-shadow var(--transition);
   position: relative;
   overflow: hidden;
   box-shadow: var(--shadow-card);
@@ -272,11 +277,10 @@ body {
 .habit-card:hover::before { height: 5px; }
 .habit-card:hover {
   border-color: var(--card-accent, var(--color-border-light));
-  transform: translateY(-3px) scale(1.02);
-  box-shadow: 0 8px 24px rgba(0,0,0,0.10), 0 0 0 1px var(--card-accent);
+  box-shadow: 0 6px 18px rgba(0,0,0,0.09);
 }
 
-.habit-card--done { border-color: var(--card-accent); box-shadow: 0 0 0 1px var(--card-accent), 0 4px 16px rgba(0,0,0,0.08); }
+.habit-card--done { border-color: var(--card-accent); box-shadow: var(--shadow-card); }
 .habit-card--done::before { background: var(--card-accent); }
 
 .habit-card[data-category="health"]       { --card-accent: var(--color-health);       --cat-bg: rgba(74,124,89,0.10); }
@@ -292,14 +296,12 @@ body {
   width: 44px; height: 44px; flex-shrink: 0;
   border-radius: var(--radius-md);
   display: flex; align-items: center; justify-content: center;
-  transition: transform var(--transition), box-shadow var(--transition);
 }
-.habit-card:hover .habit-card__icon-wrap { transform: scale(1.08); }
 
-.habit-card__icon-wrap--health       { background: rgba(76,175,120,0.18);  color: var(--color-health);       box-shadow: 0 0 10px rgba(76,175,120,0.2); }
-.habit-card__icon-wrap--learning     { background: rgba(91,156,246,0.18);  color: var(--color-learning);     box-shadow: 0 0 10px rgba(91,156,246,0.2); }
+.habit-card__icon-wrap--health       { background: rgba(76,175,120,0.18);  color: var(--color-health); }
+.habit-card__icon-wrap--learning     { background: rgba(91,156,246,0.18);  color: var(--color-learning); }
 .habit-card__icon-wrap--productivity { background: rgba(232,146,10,0.18);  color: var(--color-productivity); }
-.habit-card__icon-wrap--mindfulness  { background: rgba(167,139,250,0.18); color: var(--color-mindfulness);  box-shadow: 0 0 10px rgba(167,139,250,0.2); }
+.habit-card__icon-wrap--mindfulness  { background: rgba(167,139,250,0.18); color: var(--color-mindfulness); }
 
 .habit-card__icon { display: block; }
 .habit-card__info  { flex: 1; min-width: 0; }
