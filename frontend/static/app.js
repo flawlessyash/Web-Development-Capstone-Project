@@ -1,33 +1,11 @@
-/**
- * STREAKR v2 — Habit Tracker
- * app.js
- *
- * New features vs v1:
- *  - Light / dark mode toggle (persisted in localStorage)
- *  - Motivational greeting based on time of day
- *  - Progress ring showing today's completion %
- *  - Emoji picker in add/edit modal
- *  - Suggestion chips in empty state (one-click add)
- *  - Sort by: streak / name / newest / done-first
- *  - Streak milestone badges (7, 21, 30, 100 days)
- *  - Weekly bar chart per habit (replaces dots)
- *  - Confetti burst when marking a habit done
- *  - Weekly completion % stat
- */
-
 'use strict';
-
-/* =============================================
-   1. CONSTANTS & STATE
-   ============================================= */
 
 const STORAGE_KEY  = 'streakr_habits_v2';
 const THEME_KEY    = 'streakr_theme';
 const MODAL_IDS    = ['modal-overlay', 'delete-overlay'];
 
-/* Backend API base URL — auto-detects local vs. production */
 const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-  ? 'http://localhost:5000'
+  ? 'http://localhost:5001'
   : 'https://web-development-capstone-project.onrender.com';
 
 const DAY_LABELS   = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
@@ -38,7 +16,6 @@ const MILESTONES   = [
   { days:   7, label: '7 days'   },
 ];
 
-/* Emoji char → Phosphor icon key (backward compat for existing DB rows) */
 const ICON_MAP = {
   '⭐': 'ph:star-bold',       '🌟': 'ph:star-bold',
   '🏃': 'ph:person-simple-run-bold',
@@ -57,14 +34,12 @@ const ICON_MAP = {
   '🎵': 'ph:music-notes-bold','🎶': 'ph:music-notes-bold',
 };
 
-/** Resolve stored value (emoji char OR ph: key) → Phosphor icon key */
 function resolveIcon(val) {
   if (!val) return 'ph:star-bold';
   if (val.startsWith('ph:')) return val;
   return ICON_MAP[val] || 'ph:star-bold';
 }
 
-/** Return an <iconify-icon> HTML string */
 function iconEl(key, cls, size) {
   const icon = resolveIcon(key);
   const c    = cls  || '';
@@ -84,10 +59,6 @@ let activeFilter  = 'all';
 let searchQuery   = '';
 let sortMode      = 'newest';
 let habitToDelete = null;
-
-/* =============================================
-   2. API DATA LOADING
-   ============================================= */
 
 async function loadHabits() {
   try {
@@ -112,10 +83,6 @@ async function loadHabits() {
     return [];
   }
 }
-
-/* =============================================
-   3. HABIT CRUD (API)
-   ============================================= */
 
 async function addHabit(name, category, emoji, desc, goal) {
   try {
@@ -220,10 +187,6 @@ function updateHabitState(id, patch) {
   habits = habits.map(h => h.id === id ? { ...h, ...patch } : h);
 }
 
-/* =============================================
-   4. DATE HELPERS
-   ============================================= */
-
 function todayISO() { return new Date().toISOString().slice(0, 10); }
 
 function offsetDate(days) {
@@ -238,15 +201,10 @@ function lastNDays(n) {
 
 function isDoneToday(h) { return h.history.includes(todayISO()); }
 
-/** Returns the 3-letter day name for an ISO date string */
 function dayLabel(iso) {
   const d = new Date(iso + 'T12:00:00');
   return DAY_LABELS[d.getDay()];
 }
-
-/* =============================================
-   5. SORTING & FILTERING
-   ============================================= */
 
 function getSortedFilteredHabits() {
   let list = habits.filter(h => {
@@ -260,14 +218,10 @@ function getSortedFilteredHabits() {
     case 'name':    list.sort((a, b) => a.name.localeCompare(b.name));   break;
     case 'done':    list.sort((a, b) => isDoneToday(b) - isDoneToday(a));break;
     case 'newest':
-    default:        /* already in insertion order (newest first) */       break;
+    default:               break;
   }
   return list;
 }
-
-/* =============================================
-   6. MILESTONE BADGE
-   ============================================= */
 
 function getMilestoneBadge(streak) {
   for (const m of MILESTONES) {
@@ -276,10 +230,6 @@ function getMilestoneBadge(streak) {
   return null;
 }
 
-/* =============================================
-   7. STATS
-   ============================================= */
-
 function calcWeeklyRate() {
   if (!habits.length) return 0;
   const days = lastNDays(7);
@@ -287,10 +237,6 @@ function calcWeeklyRate() {
   habits.forEach(h => days.forEach(d => { if (h.history.includes(d)) done++; }));
   return Math.round((done / total) * 100);
 }
-
-/* =============================================
-   8. RENDER
-   ============================================= */
 
 function renderAll() {
   renderStats();
@@ -308,9 +254,9 @@ function renderStats() {
   document.getElementById('stat-best').textContent  = best;
   document.getElementById('stat-week').textContent  = rate + '%';
 
-  // Progress ring
+  
   const pct = total ? Math.round((done / total) * 100) : 0;
-  const circumference = 2 * Math.PI * 32; // 201.06
+  const circumference = 2 * Math.PI * 32; 
   const offset = circumference - (pct / 100) * circumference;
   const ringFill = document.getElementById('ring-fill');
   if (ringFill) {
@@ -335,10 +281,6 @@ function renderHabitGrid() {
   list.forEach(h => grid.appendChild(buildCard(h)));
 }
 
-/* =============================================
-   9. HABIT CARD BUILDER
-   ============================================= */
-
 function buildCard(h) {
   const done      = isDoneToday(h);
   const days      = lastNDays(7);
@@ -350,7 +292,7 @@ function buildCard(h) {
   card.dataset.category  = h.category;
   card.setAttribute('role', 'listitem');
 
-  // Build 7-day bar chart HTML
+  
   const bars = days.map((day, i) => {
     const isToday    = i === days.length - 1;
     const isDoneDay  = h.history.includes(day);
@@ -416,10 +358,6 @@ function buildCard(h) {
   return card;
 }
 
-/* =============================================
-   10. MODAL HELPERS
-   ============================================= */
-
 function showModal(id) {
   MODAL_IDS.forEach(mid => { document.getElementById(mid).hidden = mid !== id; });
   document.body.style.overflow = 'hidden';
@@ -464,20 +402,12 @@ function openDeleteModal(id) {
   showModal('delete-overlay');
 }
 
-/* =============================================
-   11. EMOJI PICKER
-   ============================================= */
-
 function setEmoji(emoji) {
   document.getElementById('habit-emoji').value = emoji;
   document.querySelectorAll('.emoji-btn').forEach(btn => {
     btn.classList.toggle('emoji-btn--active', btn.dataset.emoji === emoji);
   });
 }
-
-/* =============================================
-   12. FORM VALIDATION
-   ============================================= */
 
 function validateForm() {
   clearFormErrors();
@@ -501,10 +431,6 @@ function clearFormErrors() {
   document.querySelectorAll('.form-input--error').forEach(el => el.classList.remove('form-input--error'));
   document.querySelectorAll('.form-error').forEach(el => el.textContent = '');
 }
-
-/* =============================================
-   13. CONFETTI
-   ============================================= */
 
 function fireConfetti() {
   const canvas  = document.getElementById('confetti-canvas');
@@ -552,10 +478,6 @@ function fireConfetti() {
   draw();
 }
 
-/* =============================================
-   14. TOAST
-   ============================================= */
-
 let toastTimer;
 function showToast(msg) {
   const t = document.getElementById('toast');
@@ -564,10 +486,6 @@ function showToast(msg) {
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => t.classList.remove('toast--show'), 2600);
 }
-
-/* =============================================
-   15. THEME
-   ============================================= */
 
 function loadTheme() {
   const saved = localStorage.getItem(THEME_KEY) || 'dark';
@@ -585,10 +503,6 @@ function toggleTheme() {
   applyTheme(current === 'dark' ? 'light' : 'dark');
 }
 
-/* =============================================
-   16. GREETING
-   ============================================= */
-
 function renderGreeting() {
   const h = new Date().getHours();
   let pool;
@@ -601,10 +515,6 @@ function renderGreeting() {
   const el   = document.getElementById('greeting');
   if (el) el.textContent = text + ' 👋';
 }
-
-/* =============================================
-   17. UTILITY
-   ============================================= */
 
 function escapeHtml(str) {
   return String(str).replace(/[&<>"']/g, ch => ({

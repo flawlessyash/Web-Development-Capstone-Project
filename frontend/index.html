@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="en" data-theme="dark">
-
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -12,18 +11,11 @@
   <link
     href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap"
     rel="stylesheet" />
-
   <link rel="stylesheet" href="static/style.css" />
-  <!-- Iconify — Phosphor silhouette SVG icons, no emojis -->
   <script src="https://code.iconify.design/iconify-icon/2.1.0/iconify-icon.min.js"></script>
 </head>
-
 <body>
-
-  <!-- CONFETTI CANVAS -->
   <canvas id="confetti-canvas" aria-hidden="true"></canvas>
-
-  <!-- HEADER -->
   <header class="header">
     <div class="container">
       <div class="header__inner">
@@ -49,13 +41,9 @@
       </div>
     </div>
   </header>
-
-  <!-- STATS BAR -->
   <section class="stats" aria-label="Summary statistics">
     <div class="container">
       <div class="stats__inner">
-
-        <!-- Progress Ring -->
         <div class="progress-ring-wrap" aria-label="Today's completion progress">
           <svg class="progress-ring" viewBox="0 0 80 80" aria-hidden="true">
             <circle class="progress-ring__bg" cx="40" cy="40" r="32" />
@@ -66,8 +54,6 @@
             <span>today</span>
           </div>
         </div>
-
-        <!-- Stat Cards -->
         <div class="stats__grid">
           <div class="stat-card">
             <span class="stat-card__icon" aria-hidden="true"><iconify-icon icon="ph:list-checks-bold"
@@ -102,16 +88,12 @@
             </div>
           </div>
         </div>
-
       </div>
     </div>
   </section>
-
-  <!-- FILTER + SORT BAR -->
   <section class="filter-bar" aria-label="Filter and sort habits">
     <div class="container">
       <div class="filter-bar__inner">
-
         <div class="filter-tabs" role="tablist" aria-label="Filter by category">
           <button class="filter-tab filter-tab--active" role="tab" data-filter="all">All</button>
           <button class="filter-tab" role="tab" data-filter="health">Health</button>
@@ -119,7 +101,6 @@
           <button class="filter-tab" role="tab" data-filter="productivity">Productivity</button>
           <button class="filter-tab" role="tab" data-filter="mindfulness">Mindfulness</button>
         </div>
-
         <div class="filter-bar__controls">
           <label for="sort-select" class="sr-only">Sort habits by</label>
           <select id="sort-select" class="sort-select" aria-label="Sort habits">
@@ -128,16 +109,13 @@
             <option value="name">A → Z</option>
             <option value="done">Done first</option>
           </select>
-
           <label for="search-input" class="sr-only">Search habits</label>
           <input type="search" id="search-input" class="search-input" placeholder="Search habits..."
             aria-label="Search habits" />
         </div>
-
       </div>
     </div>
   </section>
-
   <div class="day-popover" id="day-popover" hidden role="dialog" aria-modal="false"
     aria-label="Habits for selected day">
     <div class="day-popover__header">
@@ -146,15 +124,9 @@
     </div>
     <div class="day-popover__body" id="popover-body"></div>
   </div>
-
-  <!-- MAIN -->
   <main class="main" id="main-content">
     <div class="container">
-
-      <!-- CALENDAR LAYOUT: calendar + day detail panel side by side -->
       <div class="cal-layout" id="cal-layout" hidden>
-
-        <!-- Left: calendar -->
         <section class="calendar-section" id="calendar-section" aria-label="Monthly habit calendar">
           <div class="calendar-nav">
             <button class="cal-nav-btn" id="cal-prev-btn" aria-label="Previous month">&#8592;</button>
@@ -167,8 +139,6 @@
           </div>
           <div class="cal-grid" id="cal-grid" role="grid" aria-label="Calendar"></div>
         </section>
-
-        <!-- Right: day detail panel -->
         <div class="cal-detail-panel" id="cal-detail-panel">
           <div class="cal-detail__empty" id="cal-detail-empty">
             <iconify-icon icon="ph:calendar-blank-bold" width="48"
@@ -186,12 +156,8 @@
             <div class="cal-detail__list" id="cal-detail-list"></div>
           </div>
         </div>
-
-      </div><!-- /.cal-layout -->
-
+      </div>
       <div class="habit-grid" id="habit-grid" role="list" aria-label="Habit list"></div>
-
-      <!-- Empty State -->
       <div class="empty-state" id="empty-state" hidden>
         <div class="empty-state__icon" aria-hidden="true">◇</div>
         <h2 class="empty-state__heading">No habits yet</h2>
@@ -217,22 +183,16 @@
         </div>
         <button class="btn btn--primary" id="empty-add-btn">+ Create custom habit</button>
       </div>
-
     </div>
   </main>
-
-  <!-- ADD / EDIT HABIT MODAL -->
   <div class="modal-overlay" id="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-title" hidden>
     <div class="modal">
       <div class="modal__header">
         <h2 class="modal__title" id="modal-title">Add Habit</h2>
         <button class="modal__close" id="close-modal-btn" aria-label="Close modal">&times;</button>
       </div>
-
       <form class="modal__form" id="habit-form" novalidate>
         <input type="hidden" id="habit-id" />
-
-        <!-- Icon picker -->
         <div class="form-group">
           <label class="form-label">Choose an Icon</label>
           <div class="emoji-picker" id="emoji-picker" role="group" aria-label="Choose habit icon">
@@ -279,14 +239,12 @@
           </div>
           <input type="hidden" id="habit-emoji" value="ph:star-bold" />
         </div>
-
         <div class="form-group">
           <label class="form-label" for="habit-name">Habit Name <span aria-hidden="true">*</span></label>
           <input type="text" id="habit-name" class="form-input" placeholder="e.g. Read for 30 minutes" maxlength="60"
             required aria-required="true" />
           <span class="form-error" id="name-error" role="alert"></span>
         </div>
-
         <div class="form-row">
           <div class="form-group">
             <label class="form-label" for="habit-category">Category</label>
@@ -306,7 +264,6 @@
             </select>
           </div>
         </div>
-
         <div class="form-group">
           <label class="form-label" for="habit-desc">Why this habit?
             <span class="form-label--optional">(optional)</span>
@@ -314,7 +271,6 @@
           <textarea id="habit-desc" class="form-textarea" placeholder="Your motivation — helps you stay consistent!"
             rows="2" maxlength="200"></textarea>
         </div>
-
         <div class="modal__actions">
           <button type="button" class="btn btn--ghost" id="cancel-modal-btn">Cancel</button>
           <button type="submit" class="btn btn--primary" id="save-habit-btn">Save Habit</button>
@@ -322,8 +278,6 @@
       </form>
     </div>
   </div>
-
-  <!-- DELETE CONFIRM MODAL -->
   <div class="modal-overlay" id="delete-overlay" role="dialog" aria-modal="true" aria-labelledby="delete-title" hidden>
     <div class="modal modal--sm">
       <div class="modal__header">
@@ -337,11 +291,7 @@
       </div>
     </div>
   </div>
-
-  <!-- TOAST -->
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
-
   <script src="static/app.js"></script>
 </body>
-
 </html>
