@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en" data-theme="light">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -28,10 +28,6 @@
           <button class="btn btn--icon theme-toggle" id="theme-toggle" aria-label="Toggle light/dark mode"
             title="Toggle theme">
             <span class="theme-toggle__icon" id="theme-icon">☀️</span>
-          </button>
-          <button class="btn btn--calendar" id="calendar-toggle-btn" aria-label="Toggle calendar view" title="Calendar">
-            <iconify-icon icon="ph:calendar-dots-bold" width="16"></iconify-icon>
-            <span class="btn-label--desktop">Calendar</span>
           </button>
           <button class="btn btn--primary" id="open-modal-btn" aria-label="Add a new habit">
             <span class="btn-label--desktop">+ New Habit</span>
@@ -116,47 +112,9 @@
       </div>
     </div>
   </section>
-  <div class="day-popover" id="day-popover" hidden role="dialog" aria-modal="false"
-    aria-label="Habits for selected day">
-    <div class="day-popover__header">
-      <span class="day-popover__date" id="popover-date"></span>
-      <button class="day-popover__close" id="popover-close-btn" aria-label="Close">&times;</button>
-    </div>
-    <div class="day-popover__body" id="popover-body"></div>
-  </div>
+
   <main class="main" id="main-content">
     <div class="container">
-      <div class="cal-layout" id="cal-layout" hidden>
-        <section class="calendar-section" id="calendar-section" aria-label="Monthly habit calendar">
-          <div class="calendar-nav">
-            <button class="cal-nav-btn" id="cal-prev-btn" aria-label="Previous month">&#8592;</button>
-            <h2 class="cal-month-title" id="cal-month-title"></h2>
-            <button class="cal-nav-btn" id="cal-next-btn" aria-label="Next month">&#8594;</button>
-          </div>
-          <div class="cal-dow-row" role="row" aria-hidden="true">
-            <span>Su</span><span>Mo</span><span>Tu</span>
-            <span>We</span><span>Th</span><span>Fr</span><span>Sa</span>
-          </div>
-          <div class="cal-grid" id="cal-grid" role="grid" aria-label="Calendar"></div>
-        </section>
-        <div class="cal-detail-panel" id="cal-detail-panel">
-          <div class="cal-detail__empty" id="cal-detail-empty">
-            <iconify-icon icon="ph:calendar-blank-bold" width="48"
-              style="color:var(--color-border-light)"></iconify-icon>
-            <p>Select a day to view habits</p>
-          </div>
-          <div class="cal-detail__content" id="cal-detail-content" hidden>
-            <div class="cal-detail__header">
-              <div class="cal-detail__date" id="cal-detail-date"></div>
-              <div class="cal-detail__stat" id="cal-detail-stat"></div>
-              <div class="cal-detail__progress-wrap">
-                <div class="cal-detail__progress-bar" id="cal-detail-bar" style="width:0%"></div>
-              </div>
-            </div>
-            <div class="cal-detail__list" id="cal-detail-list"></div>
-          </div>
-        </div>
-      </div>
       <div class="habit-grid" id="habit-grid" role="list" aria-label="Habit list"></div>
       <div class="empty-state" id="empty-state" hidden>
         <div class="empty-state__icon" aria-hidden="true">◇</div>

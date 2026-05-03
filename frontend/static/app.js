@@ -488,7 +488,7 @@ function showToast(msg) {
 }
 
 function loadTheme() {
-  const saved = localStorage.getItem(THEME_KEY) || 'dark';
+  const saved = localStorage.getItem(THEME_KEY) || 'light';
   applyTheme(saved);
 }
 
@@ -521,10 +521,6 @@ function escapeHtml(str) {
     '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
   }[ch]));
 }
-
-/* =============================================
-   18. EVENT LISTENERS
-   ============================================= */
 
 function initEvents() {
   // Theme toggle
@@ -633,11 +629,6 @@ function initEvents() {
     renderHabitGrid();
   });
 
-  // ── Calendar ──────────────────────────────────────────────
-  document.getElementById('calendar-toggle-btn').addEventListener('click', toggleCalendar);
-  document.getElementById('cal-prev-btn').addEventListener('click', prevMonth);
-  document.getElementById('cal-next-btn').addEventListener('click', nextMonth);
-
   // Escape closes modals
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape') {
@@ -645,237 +636,6 @@ function initEvents() {
       closeModal('delete-overlay');
     }
   });
-}
-
-/* =============================================
-   19. CALENDAR
-   ============================================= */
-
-const MONTH_NAMES = [
-  'January','February','March','April','May','June',
-  'July','August','September','October','November','December'
-];
-
-const calState = {
-  year:    new Date().getFullYear(),
-  month:   new Date().getMonth() + 1,  // 1-based
-  data:    null,
-  visible: false,
-};
-
-async function fetchCalendar(year, month) {
-  const pad = n => String(n).padStart(2, '0');
-  const res = await fetch(`${API_BASE}/api/calendar?month=${year}-${pad(month)}`);
-  if (!res.ok) throw new Error('Calendar fetch failed');
-  return res.json();
-}
-
-async function renderCalendar() {
-  const { year, month } = calState;
-
-  document.getElementById('cal-month-title').textContent =
-    `${MONTH_NAMES[month - 1]} ${year}`;
-
-  try {
-    calState.data = await fetchCalendar(year, month);
-  } catch {
-    showToast('❌ Could not load calendar');
-    return;
-  }
-
-  const { days, habits: allHabits } = calState.data;
-
-  const habitMap = {};
-  allHabits.forEach(h => { habitMap[h.habit_id] = h; });
-
-  const grid = document.getElementById('cal-grid');
-  grid.innerHTML = '';
-
-  const today      = todayISO();
-  const firstDate  = new Date(`${year}-${String(month).padStart(2,'0')}-01T12:00:00`);
-  const startDow   = firstDate.getDay();
-  const daysInMonth = new Date(year, month, 0).getDate();
-
-  // Blank cells before day 1
-  for (let i = 0; i < startDow; i++) {
-    const blank = document.createElement('div');
-    blank.className = 'cal-cell cal-cell--outside';
-    grid.appendChild(blank);
-  }
-
-  // Day cells
-  for (let d = 1; d <= daysInMonth; d++) {
-    const iso      = `${year}-${String(month).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-    const isToday  = iso === today;
-    const isFuture = iso > today;
-    const doneIds  = days[iso] || [];
-    const hasLogs  = doneIds.length > 0;
-    const total    = allHabits.length;
-    const pct      = total > 0 ? Math.round((doneIds.length / total) * 100) : 0;
-
-    const cell = document.createElement('div');
-    cell.className = [
-      'cal-cell',
-      isToday  ? 'cal-cell--today'    : '',
-      isFuture ? 'cal-cell--future'   : '',
-      hasLogs  ? 'cal-cell--has-logs' : '',
-    ].filter(Boolean).join(' ');
-    cell.dataset.iso = iso;
-    cell.setAttribute('role', 'gridcell');
-    cell.setAttribute('tabindex', isFuture ? '-1' : '0');
-    cell.setAttribute('aria-label', `${iso}${hasLogs ? ', ' + doneIds.length + ' habits done' : ''}`);
-
-    // Ring circle
-    const ring = document.createElement('div');
-    ring.className = 'cal-day-ring';
-    if (hasLogs && !isToday) ring.style.setProperty('--pct', pct);
-
-    // Day number
-    const numEl = document.createElement('span');
-    numEl.className = 'cal-day-num';
-    numEl.textContent = d;
-    ring.appendChild(numEl);
-    cell.appendChild(ring);
-
-    // Click → select day and show detail panel
-    if (!isFuture) {
-      cell.addEventListener('click', () => selectDay(iso, cell, habitMap));
-      cell.addEventListener('keydown', e => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          selectDay(iso, cell, habitMap);
-        }
-      });
-    }
-
-    grid.appendChild(cell);
-  }
-
-  // Staggered entrance index
-  grid.querySelectorAll('.cal-cell:not(.cal-cell--outside)').forEach((c, i) => {
-    c.style.setProperty('--i', i);
-  });
-
-  // Auto-select today (or the last day of the month if we've navigated away)
-  const todayCell = grid.querySelector(`[data-iso="${today}"]`);
-  const firstDoneCell = grid.querySelector('.cal-cell--has-logs');
-  const autoCell = todayCell || firstDoneCell;
-  if (autoCell) {
-    selectDay(autoCell.dataset.iso, autoCell, habitMap);
-  }
-}
-
-function selectDay(iso, cell, habitMap) {
-  // Remove previous selection
-  document.querySelectorAll('.cal-cell--selected').forEach(c => c.classList.remove('cal-cell--selected'));
-  if (cell) cell.classList.add('cal-cell--selected');
-  renderDayDetail(iso, habitMap);
-}
-
-function renderDayDetail(iso, habitMap) {
-  const emptyEl   = document.getElementById('cal-detail-empty');
-  const contentEl = document.getElementById('cal-detail-content');
-  const dateEl    = document.getElementById('cal-detail-date');
-  const statEl    = document.getElementById('cal-detail-stat');
-  const barEl     = document.getElementById('cal-detail-bar');
-  const listEl    = document.getElementById('cal-detail-list');
-
-  const { days, habits: allHabits } = calState.data || { days: {}, habits: [] };
-  const doneIds  = days[iso] || [];
-  const doneSet  = new Set(doneIds);
-  const total    = allHabits.length;
-  const doneCount = allHabits.filter(h => doneSet.has(h.habit_id)).length;
-  const pct      = total > 0 ? Math.round((doneCount / total) * 100) : 0;
-
-  // Format date nicely
-  const d = new Date(iso + 'T12:00:00');
-  const formatted = d.toLocaleDateString('en-IN', {
-    weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
-  });
-
-  dateEl.textContent = formatted;
-  statEl.textContent = total
-    ? `${doneCount} of ${total} habit${total !== 1 ? 's' : ''} completed · ${pct}%`
-    : 'No habits tracked yet';
-
-  // Animate progress bar
-  barEl.style.width = '0%';
-  requestAnimationFrame(() => requestAnimationFrame(() => {
-    barEl.style.width = `${pct}%`;
-    // Colour: green=100%, amber=partial, grey=0
-    barEl.style.background = pct === 100
-      ? 'var(--color-success)'
-      : pct > 0 ? 'var(--color-accent)' : 'var(--color-border)';
-  }));
-
-  // Build habit list
-  listEl.innerHTML = '';
-  const done   = allHabits.filter(h =>  doneSet.has(h.habit_id));
-  const missed = allHabits.filter(h => !doneSet.has(h.habit_id));
-
-  if (!total) {
-    listEl.innerHTML = '<p style="font-size:13px;color:var(--color-text-muted);padding:16px 0;text-align:center">No habits yet — add some!</p>';
-  } else {
-    [...done, ...missed].forEach((h, idx) => {
-      const isDone = doneSet.has(h.habit_id);
-      const row = document.createElement('div');
-      row.className = `cal-detail__row cal-detail__row--${isDone ? 'done' : 'miss'}`;
-      row.style.setProperty('--ri', idx);
-      row.innerHTML = `
-        <div class="cal-detail__row-icon">${iconEl(h.emoji, '', 20)}</div>
-        <div class="cal-detail__row-info">
-          <div class="cal-detail__row-name">${escapeHtml(h.title)}</div>
-          <div class="cal-detail__row-cat">${escapeHtml(h.category)}</div>
-        </div>
-        <div class="cal-detail__row-status">
-          ${isDone
-            ? '<iconify-icon icon="ph:check-circle-fill" width="20"></iconify-icon>'
-            : '<iconify-icon icon="ph:x-circle" width="20"></iconify-icon>'}
-        </div>`;
-      listEl.appendChild(row);
-    });
-  }
-
-  emptyEl.hidden   = true;
-  contentEl.hidden = false;
-}
-
-function toggleCalendar() {
-  const layout = document.getElementById('cal-layout');
-  const btn    = document.getElementById('calendar-toggle-btn');
-
-  if (calState.visible) {
-    calState.visible = false;
-    btn.classList.remove('active');
-    layout.classList.add('is-closing');
-    layout.addEventListener('animationend', () => {
-      layout.hidden = true;
-      layout.classList.remove('is-closing');
-    }, { once: true });
-  } else {
-    calState.visible = true;
-    btn.classList.add('active');
-    layout.hidden = false;
-    renderCalendar();
-  }
-}
-
-/* =============================================
-   20. INIT
-   ============================================= */
-
-function prevMonth() {
-  if (calState.month === 1) { calState.year--; calState.month = 12; }
-  else { calState.month--; }
-  renderCalendar();
-}
-
-function nextMonth() {
-  const now = new Date();
-  if (calState.year === now.getFullYear() && calState.month === now.getMonth() + 1) return;
-  if (calState.month === 12) { calState.year++; calState.month = 1; }
-  else { calState.month++; }
-  renderCalendar();
 }
 
 async function init() {
